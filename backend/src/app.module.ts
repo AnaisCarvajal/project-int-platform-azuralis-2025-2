@@ -4,6 +4,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { PatientsModule } from './patients/patients.module';
 
+import * as crypto from 'crypto';   //problema del typeorm
+(global as any).crypto = crypto;
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),

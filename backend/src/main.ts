@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -13,10 +14,10 @@ async function bootstrap() {
     'https://frontend-azuralis-project-int-platform.onrender.com',
     'https://www.lacito.cl',
     'https://lacito.cl',
-    'http://192.168.1.86:19000',
-    'http://192.168.1.86:8081',
-    'exp://192.168.1.86:8081',
-    'exp://192.168.1.86:19000',
+    'http://192.168.1.85:19000',
+    'http://192.168.1.85:8081',
+    'exp://192.168.1.85:8081',
+    'exp://192.168.1.85:19000',
 
 
 
