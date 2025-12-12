@@ -20,6 +20,7 @@ import type { UserRole } from "./types/medical";
 const getDashboardRoute = (role: UserRole): keyof RootStackParamList => {
   switch (role) {
     case "doctor":
+      return "DashboardClinicalStaff";
     case "nurse":
       return "DashboardClinicalStaff";
     case "patient":

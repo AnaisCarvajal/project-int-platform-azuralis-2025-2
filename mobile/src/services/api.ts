@@ -181,6 +181,9 @@ export const apiService = {
       const response = await api.get(`/patients/${id}/name`);
       return (response.data as any).name;
     },
+    getById: (id: string) => {
+    return api.get(`/patients/${id}`);
+  },
   },
 
   // ============ NOTES ============

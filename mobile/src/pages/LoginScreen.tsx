@@ -47,17 +47,17 @@ export function LoginScreen() {
     if (response?.role === "doctor") {
       navigation.reset({
         index: 0,
-        routes: [{ name: "DoctorHome" as never }],
+        routes: [{ name: "DashboardClinicalStaff" as never }],
       });
     } else if (response?.role === "nurse") {
       navigation.reset({
         index: 0,
-        routes: [{ name: "NurseHome" as never }],
+        routes: [{ name: "DashboardClinicalStaff" as never }],
       });
     } else if (response?.role === "guardian") {
       navigation.reset({
         index: 0,
-        routes: [{ name: "GuardianHome" as never }],
+        routes: [{ name: "DashboardGuardian" as never }],
       });
     } else {
       // paciente por defecto
