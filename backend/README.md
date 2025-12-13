@@ -43,16 +43,9 @@ cp .env.example .env
 
 ```env
 # General
-NODE_ENV=development
+NODE_ENV=production
 
-# Base de datos local (desarrollo)
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASS=1234
-DB_NAME=famed_ucn
-
-# Base de datos producción (Supabase)
+# Base de datos (Supabase)
 DB_HOST_PROD=aws-1-us-east-1.pooler.supabase.com
 DB_PORT_PROD=5432
 DB_USER_PROD=postgres.xxxxx
@@ -72,9 +65,6 @@ R2_SECRET_ACCESS_KEY=your_secret_key
 ## Ejecución
 
 ```bash
-# Desarrollo (base de datos local)
-npm run dev
-
 # Producción (Supabase)
 npm run prod
 
@@ -153,17 +143,7 @@ care-team.service.ts     | 100%       | 100%     | 100%      | 100%
 
 ## Base de Datos
 
-El sistema utiliza PostgreSQL con dos configuraciones:
-
-- **Desarrollo**: Base de datos local ejecutada con Docker
-- **Producción**: Supabase PostgreSQL con SSL
-
-### Docker (Desarrollo)
-
-```bash
-# Iniciar base de datos local
-docker-compose up -d
-```
+El sistema utiliza Supabase PostgreSQL con SSL para todos los entornos.
 
 ## Despliegue
 

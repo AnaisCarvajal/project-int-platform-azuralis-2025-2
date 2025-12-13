@@ -53,6 +53,8 @@ export function LoginScreen() {
             // HomePage detectará isAuthenticated y redirigirá al dashboard correcto
             navigate('/', { replace: true });
         } catch (err: any) {
+            console.error('Login error:', err);
+            
             // Manejo específico de errores del backend
             if (err.response) {
                 const status = err.response.status;

@@ -52,7 +52,8 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
     }
 
     const login = async (email: string, password: string) => {
-        setIsLoading(true)
+        // No usar setIsLoading global aquí para evitar re-renders de HomePage
+        // LoginScreen tiene su propio isLoading local
         try {
             const data = await apiService.login(email, password)
             // Guardamos el token (puede venir como access_token o token)
@@ -72,15 +73,13 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
             
             // Actualizar el estado del usuario
             setUser(userData)
-            setIsLoading(false)
             
             return userData
         } catch (error: any) {
-            setIsLoading(false)
             // Limpiar tokens si hay error
             localStorage.removeItem("token")
             localStorage.removeItem("user")
-            setUser(null)
+            // Re-throw the error so LoginScreen can handle it
             throw error
         }
     }
