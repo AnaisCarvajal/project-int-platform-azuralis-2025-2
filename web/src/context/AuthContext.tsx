@@ -39,9 +39,10 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
             setUser(userData)
             // Actualizar localStorage con datos frescos
             localStorage.setItem("user", JSON.stringify(userData))
-        } catch (error) {
+        } catch (error: any) {
             // Token inválido o expirado, limpiar todo
-            console.error('Error verificando autenticación:', error)
+            const errorMsg = error?.response?.data?.message || error?.message || 'Error verificando autenticación';
+            console.error('Error verificando autenticación:', errorMsg)
             setUser(null)
             localStorage.removeItem("token")
             localStorage.removeItem("user")
@@ -56,6 +57,11 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
             const data = await apiService.login(email, password)
             // Guardamos el token (puede venir como access_token o token)
             const token = (data as any).access_token || (data as any).token;
+            
+            if (!token) {
+                throw new Error('No se recibió token de autenticación')
+            }
+            
             localStorage.setItem("token", token)
             
             // Obtener los datos completos del usuario
@@ -69,8 +75,12 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
             setIsLoading(false)
             
             return userData
-        } catch (error) {
+        } catch (error: any) {
             setIsLoading(false)
+            // Limpiar tokens si hay error
+            localStorage.removeItem("token")
+            localStorage.removeItem("user")
+            setUser(null)
             throw error
         }
     }
@@ -95,10 +105,9 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
 
             // Retorna la respuesta del registro para procesos adicionales
             return registrationResponse
-        } catch (error) {
-            throw error
-        } finally {
+        } catch (error: any) {
             setIsLoading(false)
+            throw error
         }
     }
 
