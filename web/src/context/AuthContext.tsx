@@ -9,6 +9,7 @@ interface AuthContextType {
     login: (email:string, password: string) => Promise<User>;
     logout: () => void;
     register: (userData: any) => Promise<any>;
+    refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -107,6 +108,16 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
         localStorage.removeItem("user")
     }
 
+    const refreshUser = async () => {
+        try {
+            const userData = await apiService.checkAuthStatus()
+            setUser(userData)
+            localStorage.setItem("user", JSON.stringify(userData))
+        } catch (error) {
+            console.error('Error refreshing user:', error)
+        }
+    }
+
     return (
         <AuthContext.Provider
             value={{
@@ -114,6 +125,7 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
                 login,
                 register,
                 logout,
+                refreshUser,
                 isAuthenticated: !!user,
                 isLoading,
             }}

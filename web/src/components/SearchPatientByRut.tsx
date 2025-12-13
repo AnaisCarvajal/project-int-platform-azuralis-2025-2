@@ -180,6 +180,7 @@ export function SearchPatientByRut({ onPatientFound, onBack }: SearchPatientByRu
               <UserSearch className="w-6 h-6 text-blue-600" />
               <span>Buscar por RUT</span>
             </CardTitle>
+              <p className='text-sm text-gray-600'>Ingresa el RUT con guión. Los puntos son opcionales.</p>
           </CardHeader>
 
           <CardContent>
@@ -194,8 +195,7 @@ export function SearchPatientByRut({ onPatientFound, onBack }: SearchPatientByRu
                       setRut(e.target.value);
                       if (error) setError('');
                     }}
-                    placeholder="Ingrese el RUT del paciente con o sin puntos"
-                    disabled={loading}
+                    placeholder="11.222.333-4 o 11111111-2"
                     className="flex-1"
                   />
                   <Button
@@ -239,9 +239,6 @@ export function SearchPatientByRut({ onPatientFound, onBack }: SearchPatientByRu
                 <Clock className="w-6 h-6 text-gray-600" />
                 <span>Búsquedas Recientes</span>
               </CardTitle>
-              <p className="text-sm text-gray-600 mt-2">
-                Últimas 5 búsquedas (QR móvil y web)
-              </p>
             </CardHeader>
 
             <CardContent>

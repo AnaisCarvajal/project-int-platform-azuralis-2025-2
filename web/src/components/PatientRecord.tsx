@@ -109,18 +109,14 @@ export function PatientRecord({ patient, onBack }: PatientRecordProps) {
     loadDocuments();
   }, [patient.id]);
 
-  // Ordenar documentos - destacar el del Comité Oncológico
+  // Separar documentos del Comité Oncológico de otros documentos
   useEffect(() => {
-    // Separar el documento del Comité Oncológico
-    const comiteDoc = documents.find(doc => 
-      doc.title.toLowerCase().includes('comité') && doc.title.toLowerCase().includes('oncológico')
-    );
-    const otherDocs = documents.filter(doc => 
-      !(doc.title.toLowerCase().includes('comité') && doc.title.toLowerCase().includes('oncológico'))
-    );
+    // Separar documentos del Comité Oncológico usando el campo isComiteOncologico
+    const comiteDocs = documents.filter(doc => doc.isComiteOncologico === true);
+    const otherDocs = documents.filter(doc => doc.isComiteOncologico !== true);
     
-    // Poner el documento del Comité Oncológico al principio si existe
-    setDisplayDocuments(comiteDoc ? [comiteDoc, ...otherDocs] : otherDocs);
+    // Poner los documentos del Comité Oncológico al principio
+    setDisplayDocuments([...comiteDocs, ...otherDocs]);
   }, [documents]);
 
   const formatDate = (dateString: string) => {
@@ -150,8 +146,19 @@ export function PatientRecord({ patient, onBack }: PatientRecordProps) {
       oncologo_principal: "Oncólogo Principal",
       enfermera_jefe: "Enfermera Jefe",
       cirujano: "Cirujano",
+      radiologo: "Radiólogo",
+      consultor: "Consultor",
     };
-    return roleNames[role] || role;
+    // Si el rol existe en el diccionario, devolverlo formateado
+    // Si no existe, capitalizar la primera letra y reemplazar guiones bajos con espacios
+    if (roleNames[role]) {
+      return roleNames[role];
+    }
+    // Formatear rol personalizado: "mi_rol_custom" → "Mi Rol Custom"
+    return role
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   };
 
   // Función para abrir/descargar el documento con URL firmada
@@ -467,28 +474,35 @@ export function PatientRecord({ patient, onBack }: PatientRecordProps) {
               </Card>
             ) : (
               <div className="space-y-6">
-                {/* Documento del Comité Oncológico destacado */}
-                {displayDocuments.length > 0 && 
-                 displayDocuments[0].title.toLowerCase().includes('comité') && 
-                 displayDocuments[0].title.toLowerCase().includes('oncológico') && (
-                  <Card className="bg-purple-600 border-purple-700 shadow-lg overflow-hidden">
+                {/* Sección del Comité Oncológico */}
+                {displayDocuments.filter(doc => doc.isComiteOncologico === true).length > 0 && (
+                  <Card className="bg-purple-50 border-purple-300 shadow-lg overflow-hidden">
                     <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0 text-white">
-                          <h3 className="font-bold text-xl mb-2">{displayDocuments[0].title}</h3>
-                          <div className="flex items-center space-x-2 text-purple-100">
-                            <Calendar className="w-4 h-4" />
-                            <span className="text-sm">{formatDate(displayDocuments[0].uploadDate)}</span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="secondary"
-                          onClick={() => downloadDocument(displayDocuments[0].id)}
-                          className="bg-white text-purple-600 hover:bg-purple-50 ml-4"
-                        >
-                          <FileText className="w-4 h-4 mr-2" />
-                          Abrir Documento
-                        </Button>
+                      <h3 className="font-bold text-xl mb-4 text-purple-900">Comité Oncológico</h3>
+                      <div className="space-y-3">
+                        {displayDocuments
+                          .filter(doc => doc.isComiteOncologico === true)
+                          .map((doc) => (
+                            <div key={doc.id} className="bg-white rounded-lg p-4 border border-purple-200 hover:shadow-md transition-shadow">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-purple-900 mb-1">{doc.title}</h4>
+                                  <div className="flex items-center space-x-2 text-purple-600">
+                                    <Calendar className="w-4 h-4" />
+                                    <span className="text-sm">{formatDate(doc.uploadDate)}</span>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="default"
+                                  onClick={() => downloadDocument(doc.id)}
+                                  className="bg-purple-600 hover:bg-purple-700 text-white ml-4"
+                                >
+                                  <FileText className="w-4 h-4 mr-2" />
+                                  Abrir
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
                       </div>
                     </CardContent>
                   </Card>
@@ -496,44 +510,43 @@ export function PatientRecord({ patient, onBack }: PatientRecordProps) {
 
                 {/* Resto de documentos en grid */}
                 <div className="grid md:grid-cols-2 gap-4">
-                  {displayDocuments.slice(
-                    displayDocuments[0]?.title.toLowerCase().includes('comité') && 
-                    displayDocuments[0]?.title.toLowerCase().includes('oncológico') ? 1 : 0
-                  ).map((doc) => (
-                    <Card key={doc.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                          <CardTitle className="text-base">
-                            {doc.title}
-                          </CardTitle>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {formatDate(doc.uploadDate)}
-                          </p>
+                  {displayDocuments
+                    .filter(doc => doc.isComiteOncologico !== true)
+                    .map((doc) => (
+                      <Card key={doc.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                            <CardTitle className="text-base">
+                              {doc.title}
+                            </CardTitle>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {formatDate(doc.uploadDate)}
+                            </p>
+                          </div>
+                          <Badge
+                            style={{
+                              backgroundColor: getDocumentBadgeColor(doc.type),
+                            }}
+                            className="text-white"
+                          >
+                            {doc.type}
+                          </Badge>
                         </div>
-                        <Badge
-                          style={{
-                            backgroundColor: getDocumentBadgeColor(doc.type),
-                          }}
-                          className="text-white"
+                      </CardHeader>
+                      <CardContent>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => downloadDocument(doc.id)}
                         >
-                          {doc.type}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => downloadDocument(doc.id)}
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Abrir
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                          <FileText className="w-4 h-4 mr-2" />
+                          Abrir
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
           </TabsContent>

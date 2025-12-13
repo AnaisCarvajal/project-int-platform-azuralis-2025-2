@@ -1,9 +1,6 @@
 export const API_CONFIG = {
   // URL base de la API
-  BASE_URL: import.meta.env.VITE_API_URL || 
-    (import.meta.env.DEV 
-      ? "http://localhost:3000" 
-      : "http://localhost:3000"), // TODO: Cambiar a URL de producción
+  BASE_URL: import.meta.env.VITE_API_URL || "http://localhost:3000",
   
   // Timeout para las peticiones (en ms)
   TIMEOUT: 30000,

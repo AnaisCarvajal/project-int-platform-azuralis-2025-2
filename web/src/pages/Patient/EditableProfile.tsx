@@ -69,10 +69,12 @@ export function EditableProfile() {
           // Cargar foto de perfil del usuario
           if (user?.id) {
             try {
+              console.log('📸 Cargando foto de perfil para usuario:', user.id);
               const photoData = await apiService.users.getProfilePicture(user.id);
+              console.log('📸 Foto de perfil recibida:', photoData);
               setUserPhoto(photoData);
             } catch (error) {
-              console.log('No profile picture found');
+              console.log('⚠️ No profile picture found:', error);
             }
           }
         } catch (error) {
@@ -241,14 +243,16 @@ export function EditableProfile() {
         type: 'image/webp',
       });
 
+      console.log('📤 Subiendo foto de perfil...');
       const result = await apiService.users.uploadProfilePicture(user.id, optimizedFile);
+      console.log('✅ Resultado del upload:', result);
       setUserPhoto(result);
       alert('✅ Foto de perfil actualizada correctamente');
 
       // Limpiar el estado
       setSelectedImageSrc(null);
     } catch (error) {
-      console.error('Error uploading profile picture:', error);
+      console.error('❌ Error uploading profile picture:', error);
       alert('❌ Error al subir la foto. Intenta nuevamente.');
     } finally {
       setSaving(false);
@@ -298,57 +302,55 @@ export function EditableProfile() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-start space-x-6">
+          <div className="flex flex-col md:flex-row items-start md:space-x-6 space-y-6 md:space-y-0">
             {/* Avatar */}
-            <div className="space-y-2">
+            <div className="flex flex-col items-center space-y-2 w-full md:w-auto">
               <Avatar className="w-20 h-20">
                 <AvatarImage src={userPhoto?.url} alt={patient?.name} />
                 <AvatarFallback className="text-lg" style={{ backgroundColor: currentCancerColor.color + '40' }}>
                   {patient?.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                 </AvatarFallback>
               </Avatar>
-              <div className="text-center">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    console.log('Button clicked, triggering file input');
-                    fileInputRef.current?.click();
-                  }}
-                >
-                  <Edit3 className="w-3 h-3 mr-1" />
-                  Cambiar Foto
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    console.log('handlePhotoUpload called', e.target.files);
-                    const file = e.target.files?.[0];
-                    if (!file) {
-                      console.log('No file selected');
-                      return;
-                    }
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  console.log('Button clicked, triggering file input');
+                  fileInputRef.current?.click();
+                }}
+              >
+                <Edit3 className="w-3 h-3 mr-1" />
+                Cambiar Foto
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  console.log('handlePhotoUpload called', e.target.files);
+                  const file = e.target.files?.[0];
+                  if (!file) {
+                    console.log('No file selected');
+                    return;
+                  }
 
-                    console.log('File selected:', file.name, file.size);
+                  console.log('File selected:', file.name, file.size);
 
-                    // Limpiar el input ANTES de procesar para evitar problemas
-                    e.target.value = '';
+                  // Limpiar el input ANTES de procesar para evitar problemas
+                  e.target.value = '';
 
-                    // Crear URL para mostrar en el diálogo de recorte
-                    const imageUrl = URL.createObjectURL(file);
-                    console.log('Image URL created:', imageUrl);
-                    setSelectedImageSrc(imageUrl);
-                    setCropDialogOpen(true);
-                  }}
-                />
-              </div>
+                  // Crear URL para mostrar en el diálogo de recorte
+                  const imageUrl = URL.createObjectURL(file);
+                  console.log('Image URL created:', imageUrl);
+                  setSelectedImageSrc(imageUrl);
+                  setCropDialogOpen(true);
+                }}
+              />
             </div>
 
             {/* Info */}
-            <div className="flex-1 space-y-4">
+            <div className="flex-1 space-y-4 w-full">
 
               {/* Nombre */}
               <div>

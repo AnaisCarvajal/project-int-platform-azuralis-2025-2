@@ -16,6 +16,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   ArrowLeft,
   Phone,
@@ -32,6 +34,9 @@ import {
   X,
   Plus,
   Trash2,
+  Upload,
+  Camera,
+  FolderOpen,
 } from "lucide-react";
 import type { Patient, EmergencyContact, Operation } from "@/types/medical";
 import { cancerColors, DOCTOR_PERMISSIONS, NURSE_PERMISSIONS } from "@/types/medical";
@@ -90,6 +95,12 @@ export function EditablePatientRecord({ patient: initialPatient, onBack }: Edita
   const [newDocType, setNewDocType] = useState<string>("examen");
   const [selectedFile, setSelectedFile] = useState<File | null>(null); // ✅ Archivo real
   const [newDocDescription, setNewDocDescription] = useState("");
+  
+  // Estados para Comité Oncológico
+  const [showComiteTitleModal, setShowComiteTitleModal] = useState(false);
+  const [pendingComiteFile, setPendingComiteFile] = useState<File | null>(null);
+  const [pendingComiteTitle, setPendingComiteTitle] = useState('Comité Oncológico');
+  const [isLoadingComite, setIsLoadingComite] = useState(false);
 
   // Función para verificar si puede editar un campo
   const canEdit = (field: keyof Patient): boolean => {
@@ -134,18 +145,14 @@ export function EditablePatientRecord({ patient: initialPatient, onBack }: Edita
     loadDocuments();
   }, [patient.id]);
 
-  // Ordenar documentos - destacar el del Comité Oncológico
+  // Separar documentos del Comité Oncológico de otros documentos
   useEffect(() => {
-    // Separar el documento del Comité Oncológico
-    const comiteDoc = documents.find(doc => 
-      doc.title.toLowerCase().includes('comité') && doc.title.toLowerCase().includes('oncológico')
-    );
-    const otherDocs = documents.filter(doc => 
-      !(doc.title.toLowerCase().includes('comité') && doc.title.toLowerCase().includes('oncológico'))
-    );
+    // Separar documentos del Comité Oncológico usando el campo isComiteOncologico
+    const comiteDocs = documents.filter(doc => doc.isComiteOncologico === true);
+    const otherDocs = documents.filter(doc => doc.isComiteOncologico !== true);
     
-    // Poner el documento del Comité Oncológico al principio si existe
-    setDisplayDocuments(comiteDoc ? [comiteDoc, ...otherDocs] : otherDocs);
+    // Poner los documentos del Comité Oncológico al principio
+    setDisplayDocuments([...comiteDocs, ...otherDocs]);
   }, [documents]);
 
   // Load patient profile picture
@@ -558,6 +565,91 @@ export function EditablePatientRecord({ patient: initialPatient, onBack }: Edita
     setSelectedFile(file);
     if (!newDocTitle.trim()) {
       setNewDocTitle(file.name.split('.')[0]);
+    }
+  };
+
+  // ==================== FUNCIONES PARA COMITÉ ONCOLÓGICO ====================
+  const handleAddComiteFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('El archivo es muy grande. El tamaño máximo es 10MB.');
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Tipo de archivo no permitido. Solo se permiten imágenes (JPG, PNG, GIF) y PDF.');
+      return;
+    }
+
+    setPendingComiteFile(file);
+    setPendingComiteTitle('Comité Oncológico');
+    setShowComiteTitleModal(true);
+  };
+
+  const handleAddComitePhoto = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert('El archivo es muy grande. El tamaño máximo es 10MB.');
+        return;
+      }
+
+      setPendingComiteFile(file);
+      setPendingComiteTitle('Comité Oncológico');
+      setShowComiteTitleModal(true);
+    };
+    
+    input.click();
+  };
+
+  const confirmUploadComite = async () => {
+    if (!pendingComiteFile || !pendingComiteTitle.trim()) {
+      alert('Por favor ingresa un título para el documento.');
+      return;
+    }
+
+    if (!user) {
+      alert('Error: Faltan datos de usuario.');
+      return;
+    }
+
+    setIsLoadingComite(true);
+    try {
+      const newDoc = await apiService.documents.create({
+        title: pendingComiteTitle.trim(),
+        type: 'informe_medico',
+        patientId: patient.id,
+        uploaderId: user.id,
+        uploadDate: new Date().toISOString(),
+        isComiteOncologico: true
+      }, pendingComiteFile);
+
+      setDocuments([newDoc, ...documents]);
+      setPendingComiteFile(null);
+      setPendingComiteTitle('Comité Oncológico');
+      setShowComiteTitleModal(false);
+      
+      const fileInput = document.getElementById('comite-file-upload-editable') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+      
+      alert('✅ Documento del Comité Oncológico subido exitosamente. Puedes subir más archivos.');
+    } catch (error) {
+      console.error('Error al subir documento del Comité Oncológico:', error);
+      alert('Error al subir el documento. Por favor intenta de nuevo.');
+    } finally {
+      setIsLoadingComite(false);
     }
   };
 
@@ -1238,100 +1330,151 @@ export function EditablePatientRecord({ patient: initialPatient, onBack }: Edita
               </Card>
             )}
 
-            {/* Lista de documentos existentes */}
+            {/* Sección del Comité Oncológico con botones de subida */}
+            {canUploadDocument() && (
+              <Card className="bg-purple-50 border-purple-300 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-purple-900">Comité Oncológico</h3>
+                    <span className="text-sm text-purple-700 font-medium">
+                      {documents.filter(d => d.isComiteOncologico === true).length}{' '}
+                      {documents.filter(d => d.isComiteOncologico === true).length === 1 ? 'documento' : 'documentos'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex gap-3 mb-4">
+                    <input
+                      type="file"
+                      id="comite-file-upload-editable"
+                      accept="image/*,.pdf"
+                      onChange={handleAddComiteFile}
+                      className="hidden"
+                      disabled={isLoadingComite}
+                    />
+                    <Button
+                      variant="default"
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                      onClick={() => document.getElementById('comite-file-upload-editable')?.click()}
+                      disabled={isLoadingComite}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Subir Archivo
+                    </Button>
+                    <Button
+                      variant="default"
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                      onClick={handleAddComitePhoto}
+                      disabled={isLoadingComite}
+                    >
+                      <Camera className="w-4 h-4 mr-2" />
+                      Tomar Foto
+                    </Button>
+                  </div>
+
+                  {documents.filter(d => d.isComiteOncologico === true).length === 0 ? (
+                    <div className="text-center py-8">
+                      <FolderOpen className="w-12 h-12 mx-auto text-purple-400 mb-2" />
+                      <p className="text-purple-700 font-medium">Sin documentos del comité aún</p>
+                      <p className="text-purple-600 text-sm mt-1">Puedes subir múltiples archivos usando los botones de arriba</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {documents
+                        .filter(d => d.isComiteOncologico === true)
+                        .map((doc) => (
+                          <div key={doc.id} className="bg-white rounded-lg p-4 border border-purple-200 hover:shadow-md transition-shadow">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-purple-900 mb-1">{doc.title}</h4>
+                                <div className="flex items-center space-x-2 text-purple-600">
+                                  <Calendar className="w-4 h-4" />
+                                  <span className="text-sm">{formatDate(doc.uploadDate)}</span>
+                                </div>
+                              </div>
+                              <div className="flex gap-2 ml-4">
+                                <Button
+                                  variant="default"
+                                  onClick={() => downloadDocument(doc.id)}
+                                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                                >
+                                  <FileText className="w-4 h-4 mr-2" />
+                                  Abrir
+                                </Button>
+                                {canDeleteDocument(doc) && (
+                                  <Button
+                                    variant="outline"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                    onClick={() => deleteDocument(doc.id)}
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Eliminar
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Lista de documentos existentes (solo otros documentos, NO del comité) */}
             {loadingDocuments ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <p className="text-gray-500">Cargando documentos...</p>
                 </CardContent>
               </Card>
-            ) : documents.length === 0 ? (
+            ) : documents.filter(d => d.isComiteOncologico !== true).length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg">No hay documentos registrados</p>
+                  <p className="text-gray-500 text-lg">No hay otros documentos registrados</p>
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-6">
-                {/* Documento del Comité Oncológico destacado */}
-                {displayDocuments.length > 0 && 
-                 displayDocuments[0].title.toLowerCase().includes('comité') && 
-                 displayDocuments[0].title.toLowerCase().includes('oncológico') && (
-                  <Card className="bg-purple-600 border-purple-700 shadow-lg overflow-hidden">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0 text-white">
-                          <h3 className="font-bold text-xl mb-2">{displayDocuments[0].title}</h3>
-                          <div className="flex items-center space-x-2 text-purple-100">
-                            <Calendar className="w-4 h-4" />
-                            <span className="text-sm">{formatDate(displayDocuments[0].uploadDate)}</span>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Otros Documentos</h3>
+                {/* Resto de documentos en grid */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  {displayDocuments
+                    .filter(doc => doc.isComiteOncologico !== true)
+                    .map((doc) => (
+                      <Card key={doc.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <CardTitle className="text-base">{doc.title}</CardTitle>
+                              <p className="text-xs text-gray-500 mt-1">{formatDate(doc.uploadDate)}</p>
+                              {doc.description && (
+                                <p className="text-xs text-gray-600 mt-2">{doc.description}</p>
+                              )}
+                            </div>
+                            <Badge style={{ backgroundColor: getDocumentBadgeColor(doc.type) }} className="text-white">
+                              {doc.type}
+                            </Badge>
                           </div>
-                        </div>
-                        <div className="flex flex-col space-y-2 ml-4">
-                          <Button
-                            variant="secondary"
-                            onClick={() => downloadDocument(displayDocuments[0].id)}
-                            className="bg-white text-purple-600 hover:bg-purple-50"
-                          >
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <Button variant="outline" className="w-full" onClick={() => downloadDocument(doc.id)}>
                             <FileText className="w-4 h-4 mr-2" />
-                            Abrir Documento
+                            Abrir
                           </Button>
-                          {canDeleteDocument(displayDocuments[0]) && (
+                          {canDeleteDocument(doc) && (
                             <Button
                               variant="outline"
-                              className="bg-white text-red-600 hover:bg-red-50 border-red-200"
-                              onClick={() => deleteDocument(displayDocuments[0].id)}
+                              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                              onClick={() => deleteDocument(doc.id)}
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Eliminar
                             </Button>
                           )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Resto de documentos en grid */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  {displayDocuments.slice(
-                    displayDocuments[0]?.title.toLowerCase().includes('comité') && 
-                    displayDocuments[0]?.title.toLowerCase().includes('oncológico') ? 1 : 0
-                  ).map((doc) => (
-                    <Card key={doc.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="text-base">{doc.title}</CardTitle>
-                            <p className="text-xs text-gray-500 mt-1">{formatDate(doc.uploadDate)}</p>
-                            {doc.description && (
-                              <p className="text-xs text-gray-600 mt-2">{doc.description}</p>
-                            )}
-                          </div>
-                          <Badge style={{ backgroundColor: getDocumentBadgeColor(doc.type) }} className="text-white">
-                            {doc.type}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <Button variant="outline" className="w-full" onClick={() => downloadDocument(doc.id)}>
-                          <FileText className="w-4 h-4 mr-2" />
-                          Abrir
-                        </Button>
-                        {canDeleteDocument(doc) && (
-                          <Button
-                            variant="outline"
-                            className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                            onClick={() => deleteDocument(doc.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Eliminar
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    ))}
                 </div>
               </div>
             )}
@@ -1392,6 +1535,51 @@ export function EditablePatientRecord({ patient: initialPatient, onBack }: Edita
       </div>
 
       <div className="h-20" />
+
+      {/* Modal para título del Comité Oncológico */}
+      <Dialog open={showComiteTitleModal} onOpenChange={setShowComiteTitleModal}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Título del documento</DialogTitle>
+            <DialogDescription>
+              Ingresa un nombre para identificar este documento del Comité Oncológico
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="comite-title-editable">Título del documento</Label>
+              <Input
+                id="comite-title-editable"
+                placeholder="Ej: Informe Comité Oncológico 12/10"
+                value={pendingComiteTitle}
+                onChange={(e) => setPendingComiteTitle(e.target.value)}
+                disabled={isLoadingComite}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowComiteTitleModal(false);
+                  setPendingComiteFile(null);
+                  setPendingComiteTitle('Comité Oncológico');
+                }}
+                disabled={isLoadingComite}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={confirmUploadComite}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+                disabled={isLoadingComite || !pendingComiteTitle.trim()}
+              >
+                {isLoadingComite ? 'Subiendo...' : 'Guardar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

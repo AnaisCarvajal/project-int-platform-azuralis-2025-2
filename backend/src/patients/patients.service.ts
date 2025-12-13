@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { Patient } from './entities/patient.entity';
 import { PatientNote } from './entities/patient-note.entity';
 import { PatientDocument } from './entities/patient-document.entity';
+import { EmergencyContact } from './entities/emergency-contact.entity';
+import { Operation } from './entities/operation.entity';
+import { CareTeamMember } from './entities/care-team-member.entity';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import * as QRCode from 'qrcode';
 
@@ -63,6 +66,7 @@ export class PatientsService {
       .innerJoin('patient.careTeam', 'myMembership', 'myMembership.userId = :userId AND myMembership.status = :status', { userId, status: 'active' })
       .leftJoinAndSelect('patient.careTeam', 'allMembers', 'allMembers.status = :activeStatus', { activeStatus: 'active' })
       .leftJoinAndSelect('patient.emergencyContacts', 'emergencyContacts')
+      .leftJoinAndSelect('patient.operations', 'operations')
       .getMany();
     
     return patients.map(patient => this.parsePatientData(patient));
@@ -73,6 +77,7 @@ export class PatientsService {
       .createQueryBuilder('patient')
       .leftJoinAndSelect('patient.careTeam', 'careTeamMember', 'careTeamMember.status = :status', { status: 'active' })
       .leftJoinAndSelect('patient.emergencyContacts', 'emergencyContacts')
+      .leftJoinAndSelect('patient.operations', 'operations')
       .where('patient.id = :id', { id })
       .getOne();
       
@@ -89,6 +94,7 @@ export class PatientsService {
       .createQueryBuilder('patient')
       .leftJoinAndSelect('patient.careTeam', 'careTeamMember', 'careTeamMember.status = :status', { status: 'active' })
       .leftJoinAndSelect('patient.emergencyContacts', 'emergencyContacts')
+      .leftJoinAndSelect('patient.operations', 'operations')
       .getMany();
     
     const patient = patients.find(p => {
@@ -110,7 +116,7 @@ export class PatientsService {
       currentMedications: this.parseJsonString(patient.currentMedications),
       careTeam: patient.careTeam || [], // Asegurar que careTeam siempre sea un array
       emergencyContacts: patient.emergencyContacts || [], // Asegurar array
-      operations: [], 
+      operations: patient.operations || [], // Cargar operaciones desde la relación
     };
   }
 
@@ -143,6 +149,104 @@ export class PatientsService {
           ? JSON.stringify(processedData.currentMedications) as any
           : '[]' as any;
         console.log('🔄 Converted currentMedications to:', processedData.currentMedications);
+      }
+
+      // Manejar actualización de emergencyContacts
+      if ('emergencyContacts' in processedData) {
+        console.log('🔄 Updating emergency contacts');
+        const patient = await this.patientRepo.findOne({
+          where: { id },
+          relations: ['emergencyContacts'],
+        });
+
+        if (patient) {
+          // Eliminar contactos existentes
+          if (patient.emergencyContacts && patient.emergencyContacts.length > 0) {
+            await this.patientRepo.manager.remove(patient.emergencyContacts);
+            console.log('🗑️ Deleted old emergency contacts');
+          }
+
+          // Crear nuevos contactos
+          if (processedData.emergencyContacts && Array.isArray(processedData.emergencyContacts)) {
+            patient.emergencyContacts = processedData.emergencyContacts.map((contact: any) => {
+              const newContact = this.patientRepo.manager.create(EmergencyContact, {
+                name: contact.name,
+                relationship: contact.relationship,
+                phone: contact.phone,
+                patient: patient,
+              });
+              return newContact;
+            });
+            await this.patientRepo.save(patient);
+            console.log('✅ Created new emergency contacts:', patient.emergencyContacts.length);
+          }
+        }
+      }
+
+      // Manejar actualización de operations (intervenciones quirúrgicas)
+      if ('operations' in processedData) {
+        console.log('🔄 Updating operations');
+        const patient = await this.patientRepo.findOne({
+          where: { id },
+          relations: ['operations'],
+        });
+
+        if (patient) {
+          // Eliminar operaciones existentes
+          if (patient.operations && patient.operations.length > 0) {
+            await this.patientRepo.manager.remove(patient.operations);
+            console.log('🗑️ Deleted old operations');
+          }
+
+          // Crear nuevas operaciones
+          if (processedData.operations && Array.isArray(processedData.operations)) {
+            patient.operations = processedData.operations.map((operation: any) => {
+              const newOperation = this.patientRepo.manager.create(Operation, {
+                date: operation.date,
+                procedure: operation.procedure,
+                hospital: operation.hospital,
+                patient: patient,
+              });
+              return newOperation;
+            });
+            await this.patientRepo.save(patient);
+            console.log('✅ Created new operations:', patient.operations.length);
+          }
+        }
+      }
+
+      // Manejar actualización de careTeam (equipo de cuidado)
+      if ('careTeam' in processedData) {
+        console.log('🔄 Updating care team');
+        const patient = await this.patientRepo.findOne({
+          where: { id },
+          relations: ['careTeam'],
+        });
+
+        if (patient) {
+          // Eliminar miembros del equipo existentes
+          if (patient.careTeam && patient.careTeam.length > 0) {
+            await this.patientRepo.manager.remove(patient.careTeam);
+            console.log('🗑️ Deleted old care team members');
+          }
+
+          // Crear nuevos miembros del equipo
+          if (processedData.careTeam && Array.isArray(processedData.careTeam)) {
+            patient.careTeam = processedData.careTeam.map((member: any) => {
+              const newMember = this.patientRepo.manager.create(CareTeamMember, {
+                userId: member.userId,
+                name: member.name,
+                role: member.role,
+                assignedAt: member.assignedAt || new Date(),
+                status: member.status || 'active',
+                patient: patient,
+              });
+              return newMember;
+            });
+            await this.patientRepo.save(patient);
+            console.log('✅ Created new care team members:', patient.careTeam.length);
+          }
+        }
       }
       
       // Filtrar campos que no deben actualizarse directamente
@@ -182,11 +286,8 @@ export class PatientsService {
   async generateQRCode(id: string): Promise<string> {
     const patient = await this.findOne(id);
     
-    // Usar variable de entorno según el ambiente
-    const isProduction = process.env.NODE_ENV === 'production';
-    const frontendUrl = isProduction 
-      ? (process.env.FRONTEND_URL_PROD || 'https://frontend-azuralis-project-int-platform.onrender.com')
-      : (process.env.FRONTEND_URL || 'http://localhost:5173');
+    // URL del frontend para los QR codes
+    const frontendUrl = process.env.FRONTEND_URL || 'https://lacito.cl';
     
     const emergencyUrl = `${frontendUrl}/emergency/${patient.qrCode}`;
     

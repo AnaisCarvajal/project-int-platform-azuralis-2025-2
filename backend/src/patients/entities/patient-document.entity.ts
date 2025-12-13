@@ -23,6 +23,9 @@ export class PatientDocument {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  @Column({ type: 'boolean', default: false })
+  isComiteOncologico: boolean;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   uploadDate: string;
 

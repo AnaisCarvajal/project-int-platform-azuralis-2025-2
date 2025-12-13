@@ -95,6 +95,7 @@ export interface PatientDocument {
   patientId: string;
   uploaderId: string;
   description?: string; // Descripción opcional del documento
+  isComiteOncologico?: boolean; // Indica si el documento pertenece al Comité Oncológico
 }
 
 // --- Otras Interfaces y Constantes ---
