@@ -1,29 +1,37 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { JwtService } from '@nestjs/jwt';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
+import { JwtService } from '@nestjs/jwt';
+import { ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { UserRole } from '../shared/enums/user-role.enum';
-import { ConflictException, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+
+// Mock bcrypt module
+jest.mock('bcrypt', () => ({
+  hash: jest.fn(),
+  compare: jest.fn(),
+}));
 
 describe('AuthService', () => {
   let service: AuthService;
-  let jwtService: JwtService;
-  let userRepository: any;
-
-  const mockUserRepository = {
-    findOne: jest.fn(),
-    create: jest.fn(),
-    save: jest.fn(),
-  };
-
-  const mockJwtService = {
-    sign: jest.fn(),
-    verify: jest.fn(),
-  };
+  let mockUserRepository: any;
+  let mockJwtService: any;
 
   beforeEach(async () => {
+    // Reset all mocks before each test
+    jest.clearAllMocks();
+
+    mockUserRepository = {
+      findOne: jest.fn(),
+      create: jest.fn(),
+      save: jest.fn(),
+    };
+
+    mockJwtService = {
+      sign: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -39,144 +47,258 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    jwtService = module.get<JwtService>(JwtService);
-    userRepository = module.get(getRepositoryToken(User));
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  it('should be defined', () => {
+    expect(service).toBeDefined();
   });
+
+  // =====================================================
+  // REGISTER METHOD TESTS
+  // =====================================================
 
   describe('register', () => {
-    it('should register a new user with valid credentials', async () => {
-      const name = 'Test User';
-      const email = 'test@example.com';
-      const password = 'SecurePassword123';
-      const rut = '12.345.678-9';
-      const role = UserRole.PATIENT;
+    const registerDto = {
+      name: 'Test User',
+      email: 'test@example.com',
+      password: 'Password123',
+      rut: '12.345.678-9',
+      role: UserRole.PATIENT,
+    };
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const createdUser = {
-        id: '1',
-        name,
-        email,
-        rut,
-        role,
+    it('should successfully register a new user', async () => {
+      const hashedPassword = 'hashedPassword123';
+      const savedUser = {
+        id: 'uuid-123',
+        ...registerDto,
         password: hashedPassword,
       };
 
-      jest.clearAllMocks();
       mockUserRepository.findOne.mockResolvedValue(null);
-      mockUserRepository.findOne.mockResolvedValue(null);
-      mockUserRepository.create.mockReturnValue(createdUser);
-      mockUserRepository.save.mockResolvedValue(createdUser);
+      (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
+      mockUserRepository.create.mockReturnValue(savedUser);
+      mockUserRepository.save.mockResolvedValue(savedUser);
 
-      const result = await service.register(name, email, password, rut, role);
+      const result = await service.register(
+        registerDto.name,
+        registerDto.email,
+        registerDto.password,
+        registerDto.rut,
+        registerDto.role,
+      );
 
-      expect(result).toHaveProperty('id');
-      expect(result.email).toBe(email);
-      expect(result.role).toBe(role);
+      expect(result).toEqual({
+        message: 'Usuario registrado con éxito',
+        email: registerDto.email,
+        role: registerDto.role,
+        id: savedUser.id,
+      });
+      expect(mockUserRepository.findOne).toHaveBeenCalledTimes(2);
+      expect(bcrypt.hash).toHaveBeenCalledWith(registerDto.password, 10);
     });
 
     it('should throw ConflictException when email already exists', async () => {
-      jest.clearAllMocks();
-      mockUserRepository.findOne.mockResolvedValueOnce({ id: '1' }); // Email exists
+      mockUserRepository.findOne.mockResolvedValueOnce({ email: registerDto.email });
 
       await expect(
-        service.register('Test', 'existing@example.com', 'SecurePassword123', '12.345.678-9', UserRole.PATIENT),
+        service.register(
+          registerDto.name,
+          registerDto.email,
+          registerDto.password,
+          registerDto.rut,
+          registerDto.role,
+        ),
       ).rejects.toThrow(ConflictException);
     });
 
     it('should throw ConflictException when RUT already exists', async () => {
-      jest.clearAllMocks();
-      mockUserRepository.findOne.mockResolvedValueOnce(null); // Email doesn't exist
-      mockUserRepository.findOne.mockResolvedValueOnce({ id: '1' }); // RUT exists
+      mockUserRepository.findOne
+        .mockResolvedValueOnce(null) // Email check passes
+        .mockResolvedValueOnce({ rut: registerDto.rut }); // RUT check fails
 
       await expect(
-        service.register('Test', 'test@example.com', 'SecurePassword123', '12.345.678-9', UserRole.PATIENT),
+        service.register(
+          registerDto.name,
+          registerDto.email,
+          registerDto.password,
+          registerDto.rut,
+          registerDto.role,
+        ),
       ).rejects.toThrow(ConflictException);
     });
-  });
 
-  describe('login', () => {
-    it('should return JWT token on successful login', async () => {
-      jest.clearAllMocks();
-      const email = 'test@example.com';
-      const password = 'SecurePassword123';
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      const user = {
-        id: '1',
-        email,
+    it('should use PATIENT as default role when not provided', async () => {
+      const hashedPassword = 'hashedPassword123';
+      const savedUser = {
+        id: 'uuid-123',
+        name: registerDto.name,
+        email: registerDto.email,
+        rut: registerDto.rut,
         password: hashedPassword,
         role: UserRole.PATIENT,
       };
 
-      mockUserRepository.findOne.mockResolvedValue(user);
-      mockJwtService.sign.mockReturnValue('jwt.token.here');
+      mockUserRepository.findOne.mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
+      mockUserRepository.create.mockReturnValue(savedUser);
+      mockUserRepository.save.mockResolvedValue(savedUser);
 
-      const result = await service.login(email, password);
+      const result = await service.register(
+        registerDto.name,
+        registerDto.email,
+        registerDto.password,
+        registerDto.rut,
+      );
 
-      expect(result).toHaveProperty('access_token');
-      expect(result.access_token).toBe('jwt.token.here');
       expect(result.role).toBe(UserRole.PATIENT);
     });
+  });
 
-    it('should throw UnauthorizedException when user does not exist', async () => {
-      jest.clearAllMocks();
-      mockUserRepository.findOne.mockResolvedValue(null);
+  // =====================================================
+  // LOGIN METHOD TESTS
+  // =====================================================
 
-      await expect(service.login('nonexistent@example.com', 'SecurePassword123')).rejects.toThrow(
-        UnauthorizedException,
-      );
+  describe('login', () => {
+    const loginDto = {
+      email: 'test@example.com',
+      password: 'Password123',
+    };
+
+    const mockUser = {
+      id: 'uuid-123',
+      email: loginDto.email,
+      password: 'hashedPassword',
+      role: UserRole.PATIENT,
+    };
+
+    it('should successfully login and return access token', async () => {
+      const mockToken = 'jwt-token-123';
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      mockJwtService.sign.mockReturnValue(mockToken);
+
+      const result = await service.login(loginDto.email, loginDto.password);
+
+      expect(result).toEqual({
+        access_token: mockToken,
+        role: mockUser.role,
+      });
+      expect(mockJwtService.sign).toHaveBeenCalledWith({
+        sub: mockUser.id,
+        email: mockUser.email,
+        role: mockUser.role,
+      });
     });
 
-    it('should throw UnauthorizedException when password is incorrect', async () => {
-      jest.clearAllMocks();
-      const email = 'test@example.com';
-      const password = 'CorrectPassword123';
-      const wrongPassword = 'WrongPassword123';
-      const hashedPassword = await bcrypt.hash(password, 10);
+    it('should throw UnauthorizedException when user not found', async () => {
+      mockUserRepository.findOne.mockResolvedValue(null);
 
-      const user = {
-        id: '1',
-        email,
-        password: hashedPassword,
-        role: UserRole.PATIENT,
-      };
+      await expect(
+        service.login(loginDto.email, loginDto.password),
+      ).rejects.toThrow(UnauthorizedException);
+    });
 
-      mockUserRepository.findOne.mockResolvedValue(user);
+    it('should throw UnauthorizedException when password is invalid', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(service.login(email, wrongPassword)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.login(loginDto.email, loginDto.password),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
+  // =====================================================
+  // GET PROFILE METHOD TESTS
+  // =====================================================
+
   describe('getProfile', () => {
-    it('should return user profile', async () => {
-      jest.clearAllMocks();
-      const userId = '1';
-      const user = {
+    const userId = 'uuid-123';
+
+    it('should return user profile without password', async () => {
+      const mockUser = {
         id: userId,
-        email: 'test@example.com',
         name: 'Test User',
+        email: 'test@example.com',
+        password: 'hashedPassword',
         role: UserRole.PATIENT,
+        scanHistory: null,
+        assignedPatients: null,
+        patientIds: null,
       };
 
-      mockUserRepository.findOne.mockResolvedValue(user);
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
 
       const result = await service.getProfile(userId);
 
-      expect(result).toEqual(user);
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { id: userId } });
+      expect(result.password).toBeUndefined();
+      expect(result.id).toBe(userId);
+      expect(result.name).toBe(mockUser.name);
     });
 
-    it('should throw BadRequestException when user does not exist', async () => {
-      jest.clearAllMocks();
+    it('should throw BadRequestException when user not found', async () => {
       mockUserRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.getProfile('nonexistent')).rejects.toThrow(BadRequestException);
+      await expect(service.getProfile(userId)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should parse JSON fields correctly', async () => {
+      const mockUser = {
+        id: userId,
+        name: 'Doctor Test',
+        email: 'doctor@example.com',
+        password: 'hashedPassword',
+        role: UserRole.DOCTOR,
+        scanHistory: JSON.stringify([{ patientId: 'p1', date: '2025-01-01' }]),
+        assignedPatients: JSON.stringify(['patient-1', 'patient-2']),
+        patientIds: null,
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+
+      const result = await service.getProfile(userId);
+
+      expect(result.searchHistory).toEqual([{ patientId: 'p1', date: '2025-01-01' }]);
+      expect(result.assignedPatients).toEqual(['patient-1', 'patient-2']);
+    });
+
+    it('should handle invalid JSON in scanHistory gracefully', async () => {
+      const mockUser = {
+        id: userId,
+        name: 'Test User',
+        email: 'test@example.com',
+        password: 'hashedPassword',
+        role: UserRole.DOCTOR,
+        scanHistory: 'invalid-json',
+        assignedPatients: null,
+        patientIds: null,
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+
+      const result = await service.getProfile(userId);
+
+      expect(result.searchHistory).toEqual([]);
+    });
+
+    it('should parse patientIds for guardians', async () => {
+      const mockUser = {
+        id: userId,
+        name: 'Guardian Test',
+        email: 'guardian@example.com',
+        password: 'hashedPassword',
+        role: UserRole.GUARDIAN,
+        scanHistory: null,
+        assignedPatients: null,
+        patientIds: JSON.stringify(['patient-1', 'patient-2']),
+      };
+
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+
+      const result = await service.getProfile(userId);
+
+      expect(result.patientIds).toEqual(['patient-1', 'patient-2']);
     });
   });
 });
