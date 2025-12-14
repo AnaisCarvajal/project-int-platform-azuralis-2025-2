@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Image, Modal, Platform, Pressable,
    ScrollView, StyleSheet, Text, TextInput, View,TouchableOpacity,} from "react-native";
 
-   import { Upload, Camera } from "lucide-react-native";
+   import { Upload, Camera, Pill, Phone, AlertTriangle, Scissors, Activity } from "lucide-react-native";
 import * as Linking from "expo-linking";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
@@ -715,10 +715,12 @@ export function EditablePatientRecord({
       );
 
       setDocuments((prev) => [newDoc, ...prev]);
-      setNewDocTitle("");
-      setSelectedFile(null);
-      setNewDocDescription("");
-      setUploadingDoc(false);
+
+        setNewDocTitle("");
+        setSelectedFile(null);  
+        setNewDocDescription("");
+
+        setIsDocModalVisible(false);
 
       Alert.alert("✅ Listo", "Documento subido exitosamente");
     } catch (e) {
@@ -868,12 +870,21 @@ const handleTakePhoto = async () => {
             </Text>
 
             <View style={styles.badgesRow}>
-              <Badge style={{ backgroundColor: cancerColor.color }}>
-                {cancerColor.name}
+              {/* tipo de cancer */}
+              {cancerColor?.name && (
+                <Badge style={{ backgroundColor: cancerColor.color }}>
+                  {cancerColor.name}
+                </Badge>
+              )}
+
+              {/* Badge blanco (diagnóstico + etapa) */}
+              {patient.diagnosis && patient.stage && (
+                <Badge style={styles.badgeOutline}>
+                <Text style={styles.badgeTextDark}>
+                  {patient.diagnosis} - Etapa {patient.stage}
+                </Text>
               </Badge>
-              <Badge style={styles.badgeOutline}>
-                {patient.diagnosis} - Etapa {patient.stage}
-              </Badge>
+              )}
             </View>
           </View>
         </View>
@@ -893,7 +904,10 @@ const handleTakePhoto = async () => {
     {/* ================= MEDICAMENTOS ================= */}
     <Card>
       <CardHeader>
-        <CardTitle>Medicamentos Actuales</CardTitle>
+        <View style={styles.cardHeaderLeft}>
+        <Pill size={18} color={cancerColor.color}  />
+        <Text style={styles.cardTitle}>Medicamentos Actuales</Text>
+      </View>
       </CardHeader>
       <CardContent>
         {editingMeds ? (
@@ -917,7 +931,7 @@ const handleTakePhoto = async () => {
             <Button title="Agregar medicamento" variant="outline" onPress={addMed} />
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-              <Button title="Guardar" onPress={saveMeds} style={{ flex: 1 }} />
+              <Button title="Guardar" onPress={saveMeds} style={{ flex: 1, backgroundColor: "#111827" }} />
               <Button
                 title="Cancelar"
                 variant="outline"
@@ -934,7 +948,12 @@ const handleTakePhoto = async () => {
               </Text>
             ))}
             {canEdit("currentMedications") && (
-              <Button title="Editar" variant="ghost" onPress={startEditingMeds} />
+              <TouchableOpacity
+                style={styles.editOutlineBtn}
+                onPress={startEditingMeds}
+              >
+                <Text style={styles.editOutlineText}>Editar</Text>
+              </TouchableOpacity>
             )}
           </>
         ) : (
@@ -951,7 +970,10 @@ const handleTakePhoto = async () => {
     {/* ================= CONTACTOS ================= */}
     <Card>
       <CardHeader>
-        <CardTitle>Contactos de Emergencia</CardTitle>
+        <View style={styles.cardHeaderLeft}>
+        <Phone size={18} color="#16A34A" /> 
+          <Text style={styles.cardTitle}>Contactos de Emergencia</Text>
+        </View>
       </CardHeader>
       <CardContent>
         {editingContacts ? (
@@ -990,7 +1012,7 @@ const handleTakePhoto = async () => {
             <Button title="Agregar contacto" variant="outline" onPress={addContact} />
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-              <Button title="Guardar" onPress={saveContacts} style={{ flex: 1 }} />
+              <Button title="Guardar" onPress={saveContacts} style={{ flex: 1 , backgroundColor: "#111827"}} />
               <Button
                 title="Cancelar"
                 variant="outline"
@@ -1023,7 +1045,12 @@ const handleTakePhoto = async () => {
             ))}
 
             {canEdit("emergencyContacts") && (
-              <Button title="Editar" variant="ghost" onPress={startEditingContacts} />
+              <TouchableOpacity
+                style={styles.editOutlineBtn}
+                onPress={startEditingContacts}
+              >
+                <Text style={styles.editOutlineText}>Editar</Text>
+              </TouchableOpacity>
             )}
           </>
         )}
@@ -1033,7 +1060,10 @@ const handleTakePhoto = async () => {
     {/* ================= ALERGIAS ================= */}
     <Card style={patient.allergies?.length ? styles.allergyCard : undefined}>
       <CardHeader>
-        <CardTitle>Alergias</CardTitle>
+        <View style={styles.cardHeaderLeft}>
+          <AlertTriangle size={18} color="#DC2626" />
+          <Text style={[styles.cardTitle, { color: "#DC2626" }]}> Alergias </Text>
+        </View>
       </CardHeader>
       <CardContent>
         {editingAllergies ? (
@@ -1053,7 +1083,7 @@ const handleTakePhoto = async () => {
             <Button title="Agregar alergia" variant="outline" onPress={addAllergy} />
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-              <Button title="Guardar" onPress={saveAllergies} style={{ flex: 1 }} />
+              <Button title="Guardar" onPress={saveAllergies} style={{ flex: 1, backgroundColor: "#111827" }} />
               <Button
                 title="Cancelar"
                 variant="outline"
@@ -1068,7 +1098,12 @@ const handleTakePhoto = async () => {
               <Text key={i} style={styles.allergyItem}>⚠️ {a}</Text>
             ))}
             {canEdit("allergies") && (
-              <Button title="Editar" variant="ghost" onPress={startEditingAllergies} />
+              <TouchableOpacity
+                style={styles.editOutlineBtn}
+                onPress={startEditingAllergies}
+              >
+                <Text style={styles.editOutlineText}>Editar</Text>
+              </TouchableOpacity>
             )}
           </>
         ) : (
@@ -1085,7 +1120,10 @@ const handleTakePhoto = async () => {
     {/* ================= OPERACIONES ================= */}
     <Card>
       <CardHeader>
-        <CardTitle>Intervenciones Quirúrgicas</CardTitle>
+        <View style={styles.cardHeaderLeft}>
+          <Scissors size={18} color={cancerColor.color} />
+          <Text style={styles.cardTitle}>Intervenciones Quirúrgicas</Text>
+        </View>
       </CardHeader>
       <CardContent>
         {editingOperations ? (
@@ -1133,7 +1171,7 @@ const handleTakePhoto = async () => {
             <Button title="Agregar operación" variant="outline" onPress={addOperation} />
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-              <Button title="Guardar" onPress={saveOperations} style={{ flex: 1 }} />
+              <Button title="Guardar" onPress={saveOperations} style={{ flex: 1 , backgroundColor: "#111827"}} />
               <Button
                 title="Cancelar"
                 variant="outline"
@@ -1152,7 +1190,13 @@ const handleTakePhoto = async () => {
               </View>
             ))}
             {canEdit("operations") && (
-              <Button title="Editar" variant="ghost" onPress={startEditingOperations} />
+              <TouchableOpacity
+                style={styles.editOutlineBtn}
+                onPress={startEditingOperations}
+              >
+                <Text style={styles.editOutlineText}>Editar</Text>
+              </TouchableOpacity>
+
             )}
           </>
         ) : (
@@ -1169,7 +1213,10 @@ const handleTakePhoto = async () => {
     {/* ================= TRATAMIENTO ================= */}
     <Card>
       <CardHeader>
-        <CardTitle>Estado del Tratamiento</CardTitle>
+        <View style={styles.cardHeaderLeft}>
+          <Activity size={18} color={cancerColor.color} />
+          <Text style={styles.cardTitle}>Estado del Tratamiento</Text>
+        </View>
       </CardHeader>
       <CardContent>
         {editingTreatment ? (
@@ -1180,7 +1227,7 @@ const handleTakePhoto = async () => {
               placeholder="Resumen del tratamiento"
             />
             <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-              <Button title="Guardar" onPress={saveTreatment} style={{ flex: 1 }} />
+              <Button title="Guardar" onPress={saveTreatment} style={{ flex: 1, backgroundColor: "#111827" }} />
               <Button
                 title="Cancelar"
                 variant="outline"
@@ -1193,7 +1240,12 @@ const handleTakePhoto = async () => {
           <>
             <Text>{patient.treatmentSummary}</Text>
             {canEdit("treatmentSummary") && (
-              <Button title="Editar" variant="ghost" onPress={startEditingTreatment} />
+              <TouchableOpacity
+                style={styles.editOutlineBtn}
+                onPress={startEditingTreatment}
+              >
+                <Text style={styles.editOutlineText}>Editar</Text>
+              </TouchableOpacity>
             )}
           </>
         )}
@@ -1225,7 +1277,7 @@ const handleTakePhoto = async () => {
                   title={saving ? "Guardando..." : "Guardar Nota"}
                   onPress={createNote}
                   disabled={saving}
-                  style={{ flex: 1 }}
+                  style={{ flex: 1 ,backgroundColor: "#111827"}}
                 />
                 <Button
                   title="Cancelar"
@@ -1239,10 +1291,13 @@ const handleTakePhoto = async () => {
               </View>
             </>
           ) : (
+            
             <Button
               title="Nueva Nota"
               onPress={() => setCreatingNote(true)}
+              style={{ flex: 1 ,backgroundColor: "#111827"}}
             />
+            
           )}
         </CardContent>
       </Card>
@@ -1315,7 +1370,7 @@ const handleTakePhoto = async () => {
                       title="Guardar Cambios"
                       onPress={() => saveEditedNote(note.id)}
                       disabled={saving}
-                      style={{ flex: 1 }}
+                      style={{ flex: 1,backgroundColor: "#111827" }}
                     />
                     <Button
                       title="Cancelar"
@@ -1350,6 +1405,7 @@ const handleTakePhoto = async () => {
         <Button
           title="Subir Documento"
           onPress={() => setIsDocModalVisible(true)}
+          style={{ backgroundColor: "#111827" }}
         />
       </CardContent>
     </Card>
@@ -1567,6 +1623,7 @@ const handleTakePhoto = async () => {
           </View>
         </View>
       </Modal>
+
       {/* MODAL DOC TRADICIONALES */}
       <Modal
       visible={isDocModalVisible}
@@ -1627,20 +1684,18 @@ const handleTakePhoto = async () => {
           </ScrollView>
 
           <View style={styles.uploadRow}>
-            <TouchableOpacity style={styles.uploadBtn} onPress={pickFileForGeneralUpload}>
+            <TouchableOpacity style={[styles.uploadBtn, {flex:1}]} onPress={pickFileForGeneralUpload}>
               <Upload size={16} color="#2563EB" />
               <Text style={styles.uploadText}>
                 {selectedFile ? selectedFile.name : "Subir archivo"}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-            style={[styles.primaryBtn, { backgroundColor: cancerColor.color }]}
-            onPress={handleTakePhoto}
-          >
-            <Camera size={16} color="#2563EB" />
-            <Text style={styles.primaryBtnText}>Tomar foto</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={[styles.uploadBtn, {flex:1}]} onPress={handleTakePhoto} >
+              <Camera size={16} color="#2563EB" />
+              <Text style={styles.uploadText}>Tomar foto</Text>
+            </TouchableOpacity>
+
           </View>
 
           <View style={styles.modalActions}>
@@ -1652,14 +1707,17 @@ const handleTakePhoto = async () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.comitePrimaryButton, { backgroundColor: cancerColor.color }]}
+              style={[
+                styles.primaryBtn,
+                { backgroundColor: "#111827" } // negro elegante como Cancelar
+              ]}
               onPress={uploadDocument}
               disabled={isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.comitePrimaryButton}>Guardar</Text>
+                <Text style={styles.primaryBtnText}>Guardar</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -1759,11 +1817,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#111827",
   },
   badgeText: { color: "#FFFFFF", fontWeight: "700", fontSize: 12 },
-  badgeOutline: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
+  badgeTextDark: {color: "#111827",fontWeight: "700",fontSize: 12,},
+  badgeOutline: {backgroundColor: "transparent",borderWidth: 1,borderColor: "#E5E7EB",},
 
   input: {
     borderWidth: 1,
@@ -1808,60 +1863,22 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
   },
-  modalTitle: { fontSize: 16, fontWeight: "800", color: "#111827" },
-  modalDesc: { color: "#6B7280", marginTop: 6, marginBottom: 12 },
+modalTitle: { fontSize: 16, fontWeight: "800", color: "#111827" },
+modalDesc: { color: "#6B7280", marginTop: 6, marginBottom: 12 },
   
-  allergyCard: {
-  borderColor: "#FCA5A5",
-  backgroundColor: "#FEF2F2",
-},
+allergyCard: {borderColor: "#FCA5A5",backgroundColor: "#FEF2F2",},
+allergyItem: {backgroundColor: "#FEE2E2",padding: 8,borderRadius: 8,marginTop: 6,},
 
-allergyItem: {
-  backgroundColor: "#FEE2E2",
-  padding: 8,
-  borderRadius: 8,
-  marginTop: 6,
-},
+callButton: {backgroundColor: "#16A34A",},
+// MODAL COMITE
+comiteCard: {borderColor: "#C4B5FD",backgroundColor: "#F5F3FF",},
+comiteTitle: {color: "#6D28D9",},
+comitePrimaryButton: {backgroundColor: "#7C3AED",},
+comiteOutlineButton: {backgroundColor: "#FFFFFF",borderWidth: 1,borderColor: "#7C3AED",},
+comiteEmpty: {textAlign: "center",color: "#6B7280",marginTop: 14,},
+comiteDocTitle: {marginTop:5,fontWeight: "700",color: "#111827",},
+comiteDocDate: {color: "#6D28D9",marginTop: 1,},
 
-  callButton: {
-  backgroundColor: "#16A34A", // verde
-},
-
-comiteCard: {
-  borderColor: "#C4B5FD",
-  backgroundColor: "#F5F3FF",
-},
-
-comiteTitle: {
-  color: "#6D28D9",
-},
-
-comitePrimaryButton: {
-  backgroundColor: "#7C3AED",
-},
-
-comiteOutlineButton: {
-  backgroundColor: "#FFFFFF",
-  borderWidth: 1,
-  borderColor: "#7C3AED",
-},
-
-comiteEmpty: {
-  textAlign: "center",
-  color: "#6B7280",
-  marginTop: 14,
-},
-
-comiteDocTitle: {
-  marginTop:5,
-  fontWeight: "700",
-  color: "#111827",
-},
-
-comiteDocDate: {
-  color: "#6D28D9",
-  marginTop: 1,
-},
 // Modal
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center", padding: 20 },
   modalBox: { backgroundColor: "#fff", borderRadius: 12, padding: 16, width: "100%" },
@@ -1898,28 +1915,25 @@ comiteDocDate: {
     borderRadius: 20,
     marginRight: 8,
   },
-  typeChipText: {
-    color: "#374151",
-    fontWeight: "500",
-    fontSize: 13,
-  },
+typeChipText: {color: "#374151", fontWeight: "500",fontSize: 13,},
 
-  newDocBtn: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-  marginTop: 12,
-  paddingVertical: 10,
-  borderRadius: 10,
+newDocBtn: {flexDirection: "row",alignItems: "center",justifyContent: "center",marginTop: 12,paddingVertical: 10,borderRadius: 10,},
+newDocText: {color: "#fff", fontWeight: "600",marginLeft: 6,fontSize: 15,},
+primaryBtn: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#fff", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12 },
+primaryBtnText: { marginLeft: 8, color: "#fff", fontWeight: "500" },
+
+cardHeaderRow: {flexDirection: "row",alignItems: "center",justifyContent: "space-between",},
+cardHeaderLeft: {flexDirection: "row",alignItems: "center",gap: 8,},
+
+editOutlineBtn: {
+  alignSelf: "center",
+  borderWidth: 1,
+  borderColor: "#111827", // negro suave
+  borderRadius: 999,
+  paddingVertical: 4,
+  paddingHorizontal: 50,
+  marginTop: 9,
 },
-newDocText: {
-  color: "#fff",
-  fontWeight: "600",
-  marginLeft: 6,
-  fontSize: 15,
-  },
-
-primaryBtn: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#2563EB", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12 },
-primaryBtnText: { marginLeft: 8, color: "#2563EB", fontWeight: "500" },
+editOutlineText: {color: "#111827", fontWeight: "600", fontSize: 13,},
 
 });
