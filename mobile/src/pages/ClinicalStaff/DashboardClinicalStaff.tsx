@@ -140,8 +140,6 @@ export function DashboardClinicalStaff({ navigation }: Props) {
     setActiveTab("careTeam");
   };
 
-  // ✅ Reemplazo de <input type="file"> + ImageCropDialog:
-  // Usamos ImagePicker con recorte cuadrado (allowsEditing + aspect).
   const pickAndUploadProfilePhoto = async () => {
     if (!user) return;
 
@@ -163,19 +161,18 @@ export function DashboardClinicalStaff({ navigation }: Props) {
     const asset = result.assets?.[0];
     if (!asset?.uri) return;
 
+  
     try {
       setUploadingPhoto(true);
 
-      // Tu apiService web recibe File. En RN debes subir con FormData usando { uri, name, type }.
-      // Aquí le pasamos un objeto “file-like” RN.
-      const rnFile = {
-        uri: asset.uri,
-        name: "profile-picture.jpg",
-        mimeType: "image/jpeg",
-      };
+      const uploaded = await apiService.users.uploadProfilePicture(
+        user.id,
+        asset.uri
+      );
 
-      const uploaded = await apiService.users.uploadProfilePicture(user.id, rnFile as any);
-      setUserPhoto(uploaded);
+      setUserPhoto({
+        url: `${uploaded.url}?t=${Date.now()}`,
+      });
 
       Alert.alert("✅ Listo", "Foto de perfil actualizada correctamente");
     } catch (e) {
@@ -185,6 +182,8 @@ export function DashboardClinicalStaff({ navigation }: Props) {
       setUploadingPhoto(false);
     }
   };
+
+  
   const ProfileHeader = useMemo(() => {
     const initial = (user?.name?.charAt(0) || "?").toUpperCase();
     const subtitle = isDoctor
@@ -199,7 +198,7 @@ export function DashboardClinicalStaff({ navigation }: Props) {
         <View style={styles.headerRow}>
           <View style={styles.avatarWrap}>
             {userPhoto?.url ? (
-              <Image source={{ uri: userPhoto.url }} style={styles.avatarImg} />
+              <Image  key={userPhoto.url}  source={{ uri: userPhoto.url }} style={styles.avatarImg} />
             ) : (
               <View style={[styles.avatarFallback, { backgroundColor: "#ffffff33" }]}>
                 <Text style={[styles.avatarLetter, { color: "#fff" }]}>{initial}</Text>
@@ -234,7 +233,6 @@ export function DashboardClinicalStaff({ navigation }: Props) {
     );
   }
 
-  // Si está buscando, mostrar el buscador CON bottom navigation
   if (showSearch) {
     return (
       <View style={styles.screen}>
@@ -249,7 +247,6 @@ export function DashboardClinicalStaff({ navigation }: Props) {
     );
   }
 
-  // Si seleccionó un paciente, mostrar su ficha CON bottom navigation
   if (selectedPatient) {
     return (
       <View style={styles.screen}>
@@ -263,9 +260,6 @@ export function DashboardClinicalStaff({ navigation }: Props) {
       </View>
     );
   }
-
-
-
 
   const renderContent = () => {
     switch (activeTab) {
@@ -444,8 +438,6 @@ function StatCard({
     </View>
   );
 }
-
-
 
 function PrimaryButton({
   title,
