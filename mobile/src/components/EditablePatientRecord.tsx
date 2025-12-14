@@ -1,12 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,} from "react-native";
+import { ActivityIndicator, Alert, Image, Modal, Platform, Pressable,
+   ScrollView, StyleSheet, Text, TextInput, View,TouchableOpacity,} from "react-native";
 
+   import { Upload, Camera } from "lucide-react-native";
 import * as Linking from "expo-linking";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
-import type { Patient, EmergencyContact, Operation } from "../types/medical";
+
+import { Patient, EmergencyContact, Operation, DocumentType, getDocumentTypeLabel, } from "../types/medical";
 import { cancerColors, DOCTOR_PERMISSIONS, NURSE_PERMISSIONS } from "../types/medical";
 import { useAuth } from "../context/AuthContext";
 import { apiService } from "../services/api";
@@ -25,17 +29,28 @@ type DocumentItem = any;
 type LocalFile = {
   uri: string;
   name: string;
-  mimeType: string;
   size?: number;
+  type: string;      // mime simplificado (para backend)
+  mimeType: string;
 };
 
 interface EditablePatientRecordProps {
   patient: Patient;
   onBack: () => void;
 }
+const TYPE_COLORS: Record<DocumentType, string> = {
+  examen: "#2563EB",
+  cirugia: "#DC2626",
+  quimioterapia: "#7C3AED",
+  radioterapia: "#EA580C",
+  receta: "#16A34A",
+  informe_medico: "#4F46E5",
+  consentimiento: "#CA8A04",
+  otro: "#4B5563",
+};
 
 /* =========================
-   UI PRIMITIVES (para mantener estilo tipo “web” sin shadcn)
+   UI PRIMITIVES 
    ========================= */
 
 function Card({ children, style }: { children: React.ReactNode; style?: any }) {
@@ -85,7 +100,7 @@ function Button({
 }) {
   const vStyle =
     variant === "primary"
-      ? styles.btnPrimary
+      ? styles.comitePrimaryButton
       : variant === "outline"
         ? styles.btnOutline
         : variant === "danger"
@@ -167,6 +182,8 @@ export function EditablePatientRecord({
   const [editingContacts, setEditingContacts] = useState(false);
   const [editingOperations, setEditingOperations] = useState(false);
   const [editingTreatment, setEditingTreatment] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState<number | null>(null);
+
 
   // Temporales
   const [tempMeds, setTempMeds] = useState<string[]>([]);
@@ -198,12 +215,15 @@ export function EditablePatientRecord({
   const [newDocType, setNewDocType] = useState<string>("examen");
   const [selectedFile, setSelectedFile] = useState<LocalFile | null>(null);
   const [newDocDescription, setNewDocDescription] = useState("");
+  const [isDocModalVisible, setIsDocModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Comité Oncológico
   const [showComiteTitleModal, setShowComiteTitleModal] = useState(false);
   const [pendingComiteFile, setPendingComiteFile] = useState<LocalFile | null>(null);
   const [pendingComiteTitle, setPendingComiteTitle] = useState("Comité Oncológico");
   const [isLoadingComite, setIsLoadingComite] = useState(false);
+
 
   /* =========================
      PERMISSIONS
@@ -599,8 +619,9 @@ export function EditablePatientRecord({
 
     const file: LocalFile = {
       uri: asset.uri,
-      name: asset.name || "documento",
-      mimeType: asset.mimeType || "application/octet-stream",
+      name: asset.name ?? "documento",
+      type: asset.mimeType ?? "application/octet-stream",
+      mimeType: asset.mimeType ?? "application/octet-stream",
       size: asset.size,
     };
 
@@ -626,8 +647,9 @@ export function EditablePatientRecord({
 
     const file: LocalFile = {
       uri: asset.uri,
-      name: asset.name || "comite",
-      mimeType: asset.mimeType || "application/octet-stream",
+      name: asset.name ?? "documento",
+      type: asset.mimeType ?? "application/octet-stream",
+      mimeType: asset.mimeType ?? "application/octet-stream",
       size: asset.size,
     };
 
@@ -656,7 +678,8 @@ export function EditablePatientRecord({
 
     const file: LocalFile = {
       uri: asset.uri,
-      name: `comite_${Date.now()}.jpg`,
+      name: asset.fileName ?? "foto.jpg",
+      type: "image/jpeg",
       mimeType: "image/jpeg",
     };
 
@@ -781,6 +804,33 @@ export function EditablePatientRecord({
   /* =========================
      RENDER 
      ========================= */
+  const softCancerBg = `${cancerColor.color}10`;
+
+const handleTakePhoto = async () => {
+  const perm = await ImagePicker.requestCameraPermissionsAsync();
+  if (perm.status !== "granted") {
+    Alert.alert("Permiso requerido", "Necesitamos acceso a la cámara.");
+    return;
+  }
+
+  const result = await ImagePicker.launchCameraAsync({
+    allowsEditing: true,
+    quality: 0.9,
+  });
+
+  if (result.canceled) return;
+
+  const asset = result.assets?.[0];
+  if (!asset?.uri) return;
+
+  setSelectedFile({
+  uri: asset.uri,
+  name: asset.fileName ?? "foto.jpg",
+  type: "image/jpeg",
+  mimeType: "image/jpeg",
+});
+};
+
 
   return (
     <View style={styles.screen}>
@@ -822,7 +872,7 @@ export function EditablePatientRecord({
                 {cancerColor.name}
               </Badge>
               <Badge style={styles.badgeOutline}>
-                {patient.diagnosis} - {patient.stage}
+                {patient.diagnosis} - Etapa {patient.stage}
               </Badge>
             </View>
           </View>
@@ -907,7 +957,7 @@ export function EditablePatientRecord({
         {editingContacts ? (
           <>
             {tempContacts.map((c, i) => (
-              <View key={i} style={{ marginBottom: 10 }}>
+              <View key={i} style={{ gap: 8, marginBottom: 8 }}>
                 <TextInput
                   placeholder="Nombre"
                   value={c.name}
@@ -924,8 +974,11 @@ export function EditablePatientRecord({
                   placeholder="Teléfono"
                   value={c.phone}
                   onChangeText={(v) => updateContact(i, "phone", v)}
+                  keyboardType="phone-pad"
+                  inputMode="tel"
                   style={styles.input}
                 />
+
                 <Button
                   title="Eliminar contacto"
                   variant="danger"
@@ -962,7 +1015,10 @@ export function EditablePatientRecord({
                   <Text>{c.relationship}</Text>
                   <Text>{c.phone}</Text>
                 </View>
-                <Button title="Llamar" onPress={() => callEmergencyContact(c.phone)} />
+                <Button title="Llamar"
+                  onPress={() => callEmergencyContact(c.phone)}
+                  style={styles.callButton}
+                />
               </View>
             ))}
 
@@ -975,7 +1031,7 @@ export function EditablePatientRecord({
     </Card>
 
     {/* ================= ALERGIAS ================= */}
-    <Card>
+    <Card style={patient.allergies?.length ? styles.allergyCard : undefined}>
       <CardHeader>
         <CardTitle>Alergias</CardTitle>
       </CardHeader>
@@ -983,7 +1039,7 @@ export function EditablePatientRecord({
         {editingAllergies ? (
           <>
             {tempAllergies.map((a, i) => (
-              <View key={i} style={{ flexDirection: "row", gap: 8 }}>
+              <View key={i} style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
                 <TextInput
                   value={a}
                   onChangeText={(v) => updateAllergy(i, v)}
@@ -1009,7 +1065,7 @@ export function EditablePatientRecord({
         ) : patient.allergies?.length ? (
           <>
             {patient.allergies.map((a, i) => (
-              <Text key={i}>⚠️ {a}</Text>
+              <Text key={i} style={styles.allergyItem}>⚠️ {a}</Text>
             ))}
             {canEdit("allergies") && (
               <Button title="Editar" variant="ghost" onPress={startEditingAllergies} />
@@ -1035,19 +1091,35 @@ export function EditablePatientRecord({
         {editingOperations ? (
           <>
             {tempOperations.map((op, i) => (
-              <View key={i} style={{ marginBottom: 10 }}>
+              <View key={i} style={{ gap: 8, marginBottom: 8 }}>
                 <TextInput
                   placeholder="Procedimiento"
                   value={op.procedure}
                   onChangeText={(v) => updateOperation(i, "procedure", v)}
                   style={styles.input}
                 />
+                <Pressable onPress={() => setShowDatePicker(i)}>
                 <TextInput
                   placeholder="Fecha"
                   value={op.date}
-                  onChangeText={(v) => updateOperation(i, "date", v)}
+                  editable={false}
                   style={styles.input}
                 />
+              </Pressable>
+
+              {showDatePicker === i && (
+                <DateTimePicker
+                  value={op.date ? new Date(op.date) : new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={(_, selectedDate) => {
+                    setShowDatePicker(null);
+                    if (selectedDate) {
+                      updateOperation(i, "date", selectedDate.toISOString());
+                    }
+                  }}
+                />
+              )}
                 <TextInput
                   placeholder="Hospital"
                   value={op.hospital}
@@ -1270,127 +1342,83 @@ export function EditablePatientRecord({
   <>
     {/* ===== SUBIR DOCUMENTO GENERAL ===== */}
     {canUploadDocument() && (
-      <Card>
-        <CardHeader>
-          <CardTitle>Subir Nuevo Documento</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {uploadingDoc ? (
-            <>
-              <TextInput
-                placeholder="Título del documento"
-                value={newDocTitle}
-                onChangeText={setNewDocTitle}
-                style={styles.input}
-              />
-
-              <TextInput
-                placeholder="Tipo (examen, cirugía, etc.)"
-                value={newDocType}
-                onChangeText={setNewDocType}
-                style={styles.input}
-              />
-
-              <TextInput
-                placeholder="Descripción (opcional)"
-                value={newDocDescription}
-                onChangeText={setNewDocDescription}
-                style={styles.input}
-              />
-
-              <Button
-                title={selectedFile ? `📄 ${selectedFile.name}` : "Seleccionar archivo"}
-                variant="outline"
-                onPress={pickFileForGeneralUpload}
-              />
-
-              <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-                <Button
-                  title={saving ? "Subiendo..." : "Guardar Documento"}
-                  onPress={uploadDocument}
-                  disabled={saving || !selectedFile}
-                  style={{ flex: 1 }}
-                />
-                <Button
-                  title="Cancelar"
-                  variant="outline"
-                  onPress={() => {
-                    setUploadingDoc(false);
-                    setSelectedFile(null);
-                    setNewDocTitle("");
-                    setNewDocDescription("");
-                  }}
-                  style={{ flex: 1 }}
-                />
-              </View>
-            </>
-          ) : (
-            <Button
-              title="Subir Documento"
-              onPress={() => setUploadingDoc(true)}
-            />
-          )}
-        </CardContent>
-      </Card>
-    )}
+    <Card>
+      <CardHeader>
+        <CardTitle>Subir Nuevo Documento</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Button
+          title="Subir Documento"
+          onPress={() => setIsDocModalVisible(true)}
+        />
+      </CardContent>
+    </Card>
+  )}
 
     {/* ===== COMITÉ ONCOLÓGICO ===== */}
     {canUploadDocument() && (
-      <Card style={{ borderColor: "#7C3AED" }}>
-        <CardHeader>
-          <CardTitle style={{ color: "#6D28D9" }}>
-            Comité Oncológico
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button
-            title="Subir Archivo"
-            onPress={pickFileForComite}
-            style={{ marginBottom: 8 }}
-          />
-          <Button
-            title="Tomar Foto"
-            variant="outline"
-            onPress={takeComitePhoto}
-          />
+  <Card style={styles.comiteCard}>
+    <CardHeader>
+      <CardTitle style={styles.comiteTitle}>
+        Comité Oncológico
+      </CardTitle>
+    </CardHeader>
 
-          {documents.filter(d => d.isComiteOncologico).length === 0 ? (
-            <Text style={{ textAlign: "center", color: "#6B7280", marginTop: 12 }}>
-              Sin documentos del comité aún
-            </Text>
-          ) : (
-            documents
-              .filter(d => d.isComiteOncologico)
-              .map(doc => (
-                <Card key={doc.id} style={{ marginTop: 10 }}>
-                  <CardContent>
-                    <Text style={{ fontWeight: "700" }}>{doc.title}</Text>
-                    <Text style={{ color: "#6B7280" }}>
-                      {formatDate(doc.uploadDate)}
-                    </Text>
+    <CardContent>
+      <Button
+        title="Subir Archivo"
+        onPress={pickFileForComite}
+        style={[styles.comitePrimaryButton, { marginBottom: 10 }]}
+      />
 
-                    <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-                      <Button
-                        title="Abrir"
-                        onPress={() => openDocument(doc.id)}
-                        style={{ flex: 1 }}
-                      />
-                      {canDeleteDocument(doc) && (
-                        <Button
-                          title="Eliminar"
-                          variant="danger"
-                          onPress={() => deleteDocument(doc.id)}
-                          style={{ flex: 1 }}
-                        />
-                      )}
-                    </View>
-                  </CardContent>
-                </Card>
-              ))
-          )}
-        </CardContent>
-      </Card>
-    )}
+      <Button
+        title="Tomar Foto"
+        variant="outline"
+        onPress={takeComitePhoto}
+        style={styles.comiteOutlineButton}
+      />
+
+      {documents.filter(d => d.isComiteOncologico).length === 0 ? (
+        <Text style={styles.comiteEmpty}>
+          Sin documentos del comité aún
+        </Text>
+      ) : (
+        documents
+          .filter(d => d.isComiteOncologico)
+          .map(doc => (
+            <Card key={doc.id} style={{ marginTop: 12 }}>
+              <CardContent>
+                <Text style={styles.comiteDocTitle}>
+                  {doc.title}
+                </Text>
+
+                <Text style={styles.comiteDocDate}>
+                  {formatDate(doc.uploadDate)}
+                </Text>
+
+                <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+                  <Button
+                    title="Abrir"
+                    onPress={() => openDocument(doc.id)}
+                    style={[styles.comitePrimaryButton, { flex: 1 }]}
+                  />
+
+                  {canDeleteDocument(doc) && (
+                    <Button
+                      title="Eliminar"
+                      variant="danger"
+                      onPress={() => deleteDocument(doc.id)}
+                      style={{ flex: 1 }}
+                    />
+                  )}
+                </View>
+              </CardContent>
+            </Card>
+          ))
+      )}
+    </CardContent>
+  </Card>
+)}
 
     {/* ===== OTROS DOCUMENTOS ===== */}
     <Card>
@@ -1495,8 +1523,6 @@ export function EditablePatientRecord({
   </Card>
 )}
       </ScrollView>
-
-      {/* Modal Comité Oncológico (UI base; contenido completo en Parte 4/4) */}
       <Modal
         visible={showComiteTitleModal}
         animationType="fade"
@@ -1541,6 +1567,105 @@ export function EditablePatientRecord({
           </View>
         </View>
       </Modal>
+      {/* MODAL DOC TRADICIONALES */}
+      <Modal
+      visible={isDocModalVisible}
+      transparent
+      animationType="slide"
+      onRequestClose={() => !isLoading && setIsDocModalVisible(false)}>
+    
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalBox}>
+          <Text style={styles.modalTitle}>Nuevo Documento</Text>
+
+          <Text style={styles.label}>Título</Text>
+          <TextInput
+            placeholder="Ej: Receta Tamoxifeno"
+            style={styles.input}
+            value={newDocTitle}
+            onChangeText={setNewDocTitle}
+          />
+
+          <Text style={styles.label}>Tipo de documento</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {(
+              [
+                "examen",
+                "cirugia",
+                "quimioterapia",
+                "radioterapia",
+                "receta",
+                "informe_medico",
+                "consentimiento",
+                "otro",
+              ] as DocumentType[]
+            ).map((type) => {
+              const active = newDocType === type;
+              return (
+                <TouchableOpacity
+                  key={type}
+                  onPress={() => setNewDocType(type)}
+                  style={[
+                    styles.typeChip,
+                    active && {
+                      backgroundColor: TYPE_COLORS[type],
+                      borderColor: TYPE_COLORS[type],
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.typeChipText,
+                      active && { color: "#fff", fontWeight: "700" },
+                    ]}
+                  >
+                    {getDocumentTypeLabel(type)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          <View style={styles.uploadRow}>
+            <TouchableOpacity style={styles.uploadBtn} onPress={pickFileForGeneralUpload}>
+              <Upload size={16} color="#2563EB" />
+              <Text style={styles.uploadText}>
+                {selectedFile ? selectedFile.name : "Subir archivo"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+            style={[styles.primaryBtn, { backgroundColor: cancerColor.color }]}
+            onPress={handleTakePhoto}
+          >
+            <Camera size={16} color="#2563EB" />
+            <Text style={styles.primaryBtnText}>Tomar foto</Text>
+          </TouchableOpacity>
+          </View>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={styles.outlineBtn}
+              onPress={() => setIsDocModalVisible(false)}
+            >
+              <Text style={styles.outlineText}>Cancelar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.comitePrimaryButton, { backgroundColor: cancerColor.color }]}
+              onPress={uploadDocument}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.comitePrimaryButton}>Guardar</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
     </View>
   );
 }
@@ -1614,7 +1739,7 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 12, color: "#111827", fontWeight: "600" },
   tabTextActive: { color: "#FFFFFF" },
 
-  body: { padding: 14, paddingBottom: 40, gap: 12 },
+  body: { padding: 14, paddingBottom: 140, gap: 12 },
 
   card: {
     backgroundColor: "#FFFFFF",
@@ -1660,7 +1785,6 @@ const styles = StyleSheet.create({
   btnInner: { flexDirection: "row", alignItems: "center", justifyContent: "center" },
   btnIcon: { marginRight: 8 },
 
-  btnPrimary: { backgroundColor: "#111827" },
   btnDanger: { backgroundColor: "#DC2626" },
   btnOutline: { backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E5E7EB" },
   btnGhost: { backgroundColor: "transparent" },
@@ -1686,4 +1810,116 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 16, fontWeight: "800", color: "#111827" },
   modalDesc: { color: "#6B7280", marginTop: 6, marginBottom: 12 },
+  
+  allergyCard: {
+  borderColor: "#FCA5A5",
+  backgroundColor: "#FEF2F2",
+},
+
+allergyItem: {
+  backgroundColor: "#FEE2E2",
+  padding: 8,
+  borderRadius: 8,
+  marginTop: 6,
+},
+
+  callButton: {
+  backgroundColor: "#16A34A", // verde
+},
+
+comiteCard: {
+  borderColor: "#C4B5FD",
+  backgroundColor: "#F5F3FF",
+},
+
+comiteTitle: {
+  color: "#6D28D9",
+},
+
+comitePrimaryButton: {
+  backgroundColor: "#7C3AED",
+},
+
+comiteOutlineButton: {
+  backgroundColor: "#FFFFFF",
+  borderWidth: 1,
+  borderColor: "#7C3AED",
+},
+
+comiteEmpty: {
+  textAlign: "center",
+  color: "#6B7280",
+  marginTop: 14,
+},
+
+comiteDocTitle: {
+  marginTop:5,
+  fontWeight: "700",
+  color: "#111827",
+},
+
+comiteDocDate: {
+  color: "#6D28D9",
+  marginTop: 1,
+},
+// Modal
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center", padding: 20 },
+  modalBox: { backgroundColor: "#fff", borderRadius: 12, padding: 16, width: "100%" },
+  label: { fontWeight: "600", color: "#374151", marginBottom: 6, marginTop: 6 },
+  uploadRow: { flexDirection: "row", justifyContent: "space-between", gap: 10, marginTop: 10, marginBottom: 10 },
+  uploadBtn: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#2563EB", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12 },
+  uploadText: { marginLeft: 8, color: "#2563EB", fontWeight: "500" },
+
+  modalActions: { flexDirection: "row", justifyContent: "flex-end", gap: 8 },
+  outlineBtn: { borderWidth: 1, borderColor: "#D1D5DB", borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12 },
+  outlineText: { color: "#111827", fontWeight: "600" },
+
+    actionBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 6,
+  },
+  actionBtnRed: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: "#FEE2E2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 6,
+  },
+  typeChip: {
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  typeChipText: {
+    color: "#374151",
+    fontWeight: "500",
+    fontSize: 13,
+  },
+
+  newDocBtn: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  marginTop: 12,
+  paddingVertical: 10,
+  borderRadius: 10,
+},
+newDocText: {
+  color: "#fff",
+  fontWeight: "600",
+  marginLeft: 6,
+  fontSize: 15,
+  },
+
+primaryBtn: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#2563EB", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12 },
+primaryBtnText: { marginLeft: 8, color: "#2563EB", fontWeight: "500" },
+
 });

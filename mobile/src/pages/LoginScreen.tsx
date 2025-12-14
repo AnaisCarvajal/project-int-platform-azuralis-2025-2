@@ -43,29 +43,23 @@ export function LoginScreen() {
 
     console.log("✅ Respuesta del backend:", response);
 
+    
     // 👇 dependiendo del rol del usuario, redirigimos distinto
-    if (response?.role === "doctor") {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "DashboardClinicalStaff" as never }],
-      });
-    } else if (response?.role === "nurse") {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "DashboardClinicalStaff" as never }],
-      });
+    if (response?.role === "doctor" || response?.role === "nurse") {
+    navigation.navigate("DashboardClinicalStaff" as never);
     } else if (response?.role === "guardian") {
       navigation.reset({
         index: 0,
         routes: [{ name: "DashboardGuardian" as never }],
       });
     } else {
-      // paciente por defecto
+      // paciente
       navigation.reset({
         index: 0,
         routes: [{ name: "HomePage" as never }],
       });
     }
+
   } catch (err: any) {
     console.log("❌ Error en login:", err.message);
     console.log("📡 Detalles del backend:", err.response?.data);

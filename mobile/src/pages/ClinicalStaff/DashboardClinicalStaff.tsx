@@ -1,14 +1,6 @@
+// clinicalDashboardStaff
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import {ActivityIndicator,Alert,Image,ScrollView,StyleSheet,Text,TouchableOpacity,View,} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 
@@ -298,7 +290,7 @@ export function DashboardClinicalStaff({ navigation }: Props) {
 
               <View style={{ gap: 10 }}>
                 <PrimaryButton
-                  title="Buscar Paciente (RUT)"
+                  title="Buscar Paciente (QR)"
                   onPress={() => onTabChange("search")}
                 />
                 <OutlineButton
@@ -545,3 +537,4 @@ const styles = StyleSheet.create({
   infoLabel: { color: "#6B7280", fontWeight: "700" },
   infoValue: { color: "#111827", fontWeight: "800" },
 });
+
