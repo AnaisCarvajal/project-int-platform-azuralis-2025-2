@@ -3,6 +3,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import {ActivityIndicator,Alert,Image,ScrollView,StyleSheet,Text,TouchableOpacity,View,} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
+import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 
 import { useAuth } from "../../context/AuthContext";
 import { BottomNavigation } from "../../components/BottomNavigation";
@@ -93,11 +96,9 @@ export function DashboardClinicalStaff({ navigation }: Props) {
     if (!needsProfileCompletion) loadStats();
   }, [user, needsProfileCompletion, isDoctor, isNurse]);
 
-  // Handle profile completion (en RN no existe window.location.reload)
+
   const handleProfileComplete = () => {
     setNeedsProfileCompletion(false);
-    // si quieres forzar recarga “dura” puedes re-montar pantalla con navigation.reset,
-    // pero normalmente basta con recargar data (useEffects ya lo harán).
   };
 
   const handleLogout = () => {
@@ -191,10 +192,8 @@ export function DashboardClinicalStaff({ navigation }: Props) {
       : `Departamento: ${(user as NurseUser)?.department || "-"}`;
 
     return (
-      <LinearGradient
+        <LinearGradient
         colors={[accentColor, `${accentColor}DD`]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
         style={styles.headerGradient}
       >
         <View style={styles.headerRow}>
@@ -202,21 +201,29 @@ export function DashboardClinicalStaff({ navigation }: Props) {
             {userPhoto?.url ? (
               <Image source={{ uri: userPhoto.url }} style={styles.avatarImg} />
             ) : (
-              <View style={[styles.avatarFallback, { backgroundColor: `${accentColor}40` }]}>
-                <Text style={[styles.avatarLetter, { color: accentColor }]}>{initial}</Text>
+              <View style={[styles.avatarFallback, { backgroundColor: "#ffffff33" }]}>
+                <Text style={[styles.avatarLetter, { color: "#fff" }]}>{initial}</Text>
               </View>
             )}
           </View>
 
           <View style={{ flex: 1 }}>
             <Text style={styles.headerName}>{user?.name}</Text>
+            <View style={styles.headerInfoRow}>
+            <Ionicons name="medkit-outline" size={16} color="white" />
             <Text style={styles.headerText}>{subtitle}</Text>
+          </View>
+
+          <View style={styles.headerInfoRow}>
+            <Ionicons name="mail-outline" size={16} color="white" />
             <Text style={styles.headerText}>{user?.email}</Text>
+          </View>
+
           </View>
         </View>
       </LinearGradient>
     );
-  }, [user, userPhoto, accentColor, isDoctor]);
+  }, [user, userPhoto]);
 
   // Show profile completion form if needed
   if (needsProfileCompletion) {
@@ -258,49 +265,63 @@ export function DashboardClinicalStaff({ navigation }: Props) {
   }
 
 
+
+
   const renderContent = () => {
     switch (activeTab) {
       case "home":
         return (
           <View style={{ marginTop: 14, gap: 12 }}>
             <Card style={styles.welcomeCard}>
-              <Text style={styles.welcomeTitle}>Bienvenido/a</Text>
-              <Text style={styles.welcomeSubtitle}>
-                Panel de {roleLabel} - Sistema de Fichas Médicas
-              </Text>
-            </Card>
-
-            <View style={styles.statsRow}>
-              <StatCard
-                title="Mis Pacientes"
-                value={stats.myPatients}
-              />
-              <StatCard
-                title="Búsquedas"
-                value={stats.searchHistory}
-              />
-              <StatCard
-                title="Total Pacientes"
-                value={stats.totalPatients}
-              />
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Ionicons name="checkmark-circle" size={26} color="#fff" />
+              <Text style={styles.welcomeTitle}>¡Bienvenido/a de vuelta!</Text>
             </View>
 
-            <Card>
-              <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
+            <Text style={styles.welcomeSubtitle}>
+              Panel de {roleLabel} - Ficha Médica Portátil Lacito
+            </Text>
 
-              <View style={{ gap: 10 }}>
-                <PrimaryButton
-                  title="Buscar Paciente (QR)"
-                  onPress={() => onTabChange("search")}
-                />
-                <OutlineButton
-                  title="Equipo de Cuidados (Mis pacientes)"
-                  onPress={() => onTabChange("careTeam")}
-                />
-              </View>
-            </Card>
+            <View style={styles.datePill}>
+              <Ionicons name="calendar" size={14} color="#fff" />
+              <Text style={styles.dateText}>
+                {new Date().toLocaleDateString("es-CL", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </Text>
+            </View>
+          </Card>
+
+            <View style={styles.statsGrid}>
+            <StatCard
+              title="MIS PACIENTES"
+              value={stats.myPatients}
+              subtitle="Pacientes asignados"
+              icon="people"
+              accentColor="#2563EB"
+            />
+
+            <StatCard
+              title="BÚSQUEDAS"
+              value={stats.searchHistory}
+              subtitle="Registros consultados"
+              icon="search"
+              accentColor="#22C55E"
+            />
+
+            <StatCard
+              title="PACIENTES TOTALES"
+              value={stats.totalPatients}
+              subtitle="Pacientes registrados"
+              icon="documents"
+              accentColor="#8B5CF6"
+            />
           </View>
-        );
+        </View>
+      );
 
       case "careTeam":
         return (
@@ -373,8 +394,8 @@ export function DashboardClinicalStaff({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <SafeAreaView style={styles.screen}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 120 }]}>
         {ProfileHeader}
         {renderContent()}
         <View style={{ height: 80 }} />
@@ -386,7 +407,7 @@ export function DashboardClinicalStaff({ navigation }: Props) {
         accentColor={accentColor}
         tabs={clinicalStaffTabs}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -396,14 +417,35 @@ function Card({ children, style }: { children: React.ReactNode; style?: any }) {
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-function StatCard({ title, value }: { title: string; value: number }) {
+function StatCard({
+  title,
+  value,
+  accentColor,
+  icon,
+  subtitle,
+}: {
+  title: string;
+  value: number;
+  accentColor: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  subtitle: string;
+}) {
   return (
-    <View style={styles.statCard}>
-      <Text style={styles.statLabel}>{title}</Text>
-      <Text style={styles.statValue}>{value}</Text>
+    <View style={[styles.statCardBig, { backgroundColor: `${accentColor}12` }]}>
+      <View style={styles.statHeader}>
+        <View style={[styles.statIconWrap, { backgroundColor: accentColor }]}>
+          <Ionicons name={icon} size={20} color="#fff" />
+        </View>
+        <Text style={[styles.statTitle, { color: accentColor }]}>{title}</Text>
+      </View>
+
+      <Text style={[styles.statBigValue, { color: accentColor }]}>{value}</Text>
+      <Text style={[styles.statSubtitle, { color: accentColor }]}>{subtitle}</Text>
     </View>
   );
 }
+
+
 
 function PrimaryButton({
   title,
@@ -487,15 +529,11 @@ const styles = StyleSheet.create({
   welcomeTitle: { color: "white", fontSize: 20, fontWeight: "800" },
   welcomeSubtitle: { color: "#DBEAFE", marginTop: 6 },
 
-  statsRow: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
+  statsRow: {  gap: 14, },
   statCard: {
-    flexGrow: 1,
-    minWidth: 110,
-    backgroundColor: "#F9FAFB",
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E5E7EB",
+    width: "100%",
+    borderRadius: 18,
+    padding: 18,
   },
   statLabel: { color: "#6B7280", fontWeight: "700", fontSize: 12 },
   statValue: { color: "#111827", fontWeight: "900", fontSize: 26, marginTop: 6 },
@@ -536,5 +574,71 @@ const styles = StyleSheet.create({
   },
   infoLabel: { color: "#6B7280", fontWeight: "700" },
   infoValue: { color: "#111827", fontWeight: "800" },
+  statsGrid: {gap: 14,},
+
+statCardBig: {
+  width: "100%",
+  borderRadius: 18,
+  padding: 18,
+  minHeight: 130,
+  justifyContent: "space-between",
+},
+
+statHeader: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 8,
+},
+
+statTitle: {
+  color: "#E0E7FF",
+  fontWeight: "800",
+  fontSize: 12,
+},
+
+statBigValue: {
+  color: "#FFFFFF",
+  fontSize: 32,
+  fontWeight: "900",
+},
+
+statSubtitle: {
+  color: "#E0E7FF",
+  fontSize: 13,
+},
+
+datePill: {
+  marginTop: 10,
+  alignSelf: "flex-start",
+  backgroundColor: "rgba(255,255,255,0.2)",
+  paddingHorizontal: 12,
+  paddingVertical: 6,
+  borderRadius: 999,
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 6,
+},
+
+dateText: {
+  color: "#fff",
+  fontWeight: "700",
+  fontSize: 12,
+},
+
+headerInfoRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 6,
+  marginTop: 4,
+},
+
+statIconWrap: {
+  width: 36,
+  height: 36,
+  borderRadius: 10,
+  alignItems: "center",
+  justifyContent: "center",
+},
+
 });
 
