@@ -82,4 +82,30 @@ export class UsersService {
     const { password, ...userWithoutPassword } = updated;
     return userWithoutPassword as User;
   }
+
+async search(query: string) {
+  if (!query || !query.trim()) {
+    return [];
+  }
+  const cleaned = query.trim().toLowerCase();
+  const rutNormalized = cleaned.replace(/[.\-]/g, '');
+  return this.userRepo      
+  .createQueryBuilder("user")      
+  .where(
+    `
+    (replace(replace(user.rut, '.', ''), '-', '') ILIKE :rut
+    OR user.email ILIKE :email
+    OR user.name ILIKE :name)
+    AND user.role IN ('doctor', 'nurse')
+    `,
+    {          
+      rut: `%${rutNormalized}%`,          
+      email: `%${cleaned}%`,          
+      name: `%${cleaned}%`,        
+    }      
+  )      
+  .select(["user.id", "user.name", "user.rut", "user.email", "user.role"])      
+  .limit(10)      
+  .getMany();
+}
 }

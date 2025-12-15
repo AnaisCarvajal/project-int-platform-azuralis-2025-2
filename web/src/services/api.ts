@@ -5,7 +5,8 @@ import type {
   PatientNote, 
   PatientDocument, 
   CareTeamMember,
-  UserRole 
+  UserRole, 
+  ProfessionalSearchResult
 } from "../types/medical"
 
 export const api = axios.create({
@@ -103,6 +104,13 @@ export const apiService = {
       const { data } = await api.delete(`/users/${userId}/profile-picture`)
       return data
     },
+
+    search: async (query: string): Promise<ProfessionalSearchResult[]> => {
+      const response = await api.get("/users/search", {
+        params: { query },});
+      return response.data as ProfessionalSearchResult[];
+    },
+
   },
 
   // ==================== PATIENTS ====================

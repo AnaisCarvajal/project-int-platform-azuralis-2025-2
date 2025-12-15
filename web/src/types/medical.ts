@@ -45,6 +45,13 @@ export interface CareTeamMember {
   status: 'active' | 'inactive'; // Para mantener un historial sin borrar
 }
 
+export interface ProfessionalSearchResult {
+  id: string;
+  name: string;
+  rut: string;
+  role: string;
+  email:string}
+
 export interface Patient {
   id: string;
   name: string;
