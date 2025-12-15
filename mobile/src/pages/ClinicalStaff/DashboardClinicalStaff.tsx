@@ -51,6 +51,29 @@ export function DashboardClinicalStaff({ navigation }: Props) {
   const accentColor = isDoctor ? "#001663" : "#00B4D8";
   const roleLabel = isDoctor ? "Doctor" : "Enfermera";
 
+  useEffect(() => {
+  if (!user) return;
+
+  let isProfileIncomplete = false;
+
+  // Asumimos que los campos a verificar son los que faltan para mostrar el formulario
+  if (isDoctor) {
+    const doctorUser = user as DoctorUser;
+    // Comprobar si falta la especialización O la licencia
+    if (!doctorUser.specialization || !doctorUser.license) { 
+      isProfileIncomplete = true;
+    }
+  } else if (isNurse) {
+    const nurseUser = user as NurseUser;
+    // Comprobar si falta el departamento O la licencia
+    if (!nurseUser.department || !nurseUser.license) {
+      isProfileIncomplete = true;
+    }
+  }
+
+  // Si el perfil está incompleto, mostramos el formulario
+  setNeedsProfileCompletion(isProfileIncomplete);
+}, [user, isDoctor, isNurse]);
   // Load user profile picture
   useEffect(() => {
     const loadUserPhoto = async () => {

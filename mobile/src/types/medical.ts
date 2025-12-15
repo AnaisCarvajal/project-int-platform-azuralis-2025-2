@@ -98,6 +98,15 @@ export interface PatientDocument {
   isComiteOncologico?: boolean;
 }
 
+// PROBANDO
+export interface ProfessionalSearchResult {
+  id: string;
+  name: string;
+  rut: string;
+  role: string;
+  email:string,
+}
+
 // --- Otras Interfaces y Constantes ---
 
 export interface RegisterFormData {

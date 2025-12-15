@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { User } from './entities/user.entity';
 
 @Injectable()
@@ -82,4 +82,33 @@ export class UsersService {
     const { password, ...userWithoutPassword } = updated;
     return userWithoutPassword as User;
   }
+
+  //VEAMOS SI SIRVE
+ async search(query: string) {
+    if (!query || !query.trim()) {
+      return [];
+    }
+
+    const cleaned = query.trim().toLowerCase();
+    const rutNormalized = cleaned.replace(/[.\-]/g, '');
+
+    return this.userRepo
+      .createQueryBuilder("user")
+      .where(
+        `
+        replace(replace(user.rut, '.', ''), '-', '') ILIKE :rut
+        OR user.email ILIKE :email
+        OR user.name ILIKE :name
+        `,
+        {
+          rut: `%${rutNormalized}%`,
+          email: `%${cleaned}%`,
+          name: `%${cleaned}%`,
+        }
+      )
+      .select(["user.id", "user.name", "user.rut", "user.email", "user.role"])
+      .limit(10)
+      .getMany();
+  }
+
 }

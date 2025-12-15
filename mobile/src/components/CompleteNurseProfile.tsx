@@ -11,15 +11,19 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { apiService } from "../services/api";
 import { Stethoscope } from "lucide-react-native";
+import { api } from "../services/api";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 
 interface CompleteNurseProfileProps {
   onComplete: () => void;
 }
 
 export const CompleteNurseProfile = ({ onComplete }: CompleteNurseProfileProps) => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
 
   const [formData, setFormData] = useState({
     department: "",
@@ -43,13 +47,20 @@ export const CompleteNurseProfile = ({ onComplete }: CompleteNurseProfileProps) 
       if (!user?.id) {
         throw new Error("Usuario no autenticado");
       }
+      console.log("ID de Usuario a actualizar:", user.id);
+      console.log("Datos a enviar:", formData);
 
-      await apiService.users.update(user.id, {
-        department: formData.department.trim(),
-        license: formData.license.trim(),
+      await api.put(`/users/${user.id}`, {
+      department: formData.department.trim(),
+      license: formData.license.trim(),
       });
 
+      // 👇 volver a pedir el usuario actualizado
+      const updatedUser = await apiService.getProfile(user.id);
+      // 👇 actualizar el contexto
+      setUser(updatedUser);
       onComplete();
+
     } catch (err: any) {
       console.error("Error al completar perfil:", err);
       setError(
@@ -62,6 +73,7 @@ export const CompleteNurseProfile = ({ onComplete }: CompleteNurseProfileProps) 
   };
 
   return (
+    <SafeAreaView style={styles.screen}>
     <ScrollView contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.headerCard}>
@@ -129,6 +141,7 @@ export const CompleteNurseProfile = ({ onComplete }: CompleteNurseProfileProps) 
         </Text>
       </View>
     </ScrollView>
+  </SafeAreaView>
   );
 };
 
@@ -222,4 +235,5 @@ const styles = StyleSheet.create({
     color: "#334155",
     textAlign: "center",
   },
+  screen: { flex: 1, backgroundColor: "#F3F4F6" }
 });

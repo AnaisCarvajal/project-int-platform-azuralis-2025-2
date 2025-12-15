@@ -1,10 +1,17 @@
-import { Body, Controller, Get, Param, Put, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Put, Post, UseGuards, Query } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+    // ESTOY PROBANDO
+  @Get("search")
+ searchUsers(@Query("query") query: string) {
+  console.log('🔎 search query:', query);
+  return this.usersService.search(query);
+  }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
@@ -26,4 +33,5 @@ export class UsersController {
   ) {
     return this.usersService.addSearchHistory(id, body.patientId, body.patientRut);
   }
+
 }

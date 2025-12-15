@@ -6,6 +6,7 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator,
 import { useAuth } from "../context/AuthContext";
 import { apiService } from "../services/api";
 import { Stethoscope, Award } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface CompleteDoctorProfileProps {
   onComplete: () => void;
@@ -49,6 +50,7 @@ export function CompleteDoctorProfile({ onComplete }: CompleteDoctorProfileProps
   };
 
   return (
+    <SafeAreaView style={styles.screen}>
     <ScrollView contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.headerCard}>
@@ -127,6 +129,7 @@ export function CompleteDoctorProfile({ onComplete }: CompleteDoctorProfileProps
         </Text>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -225,4 +228,5 @@ const styles = StyleSheet.create({
     color: "#4B5563",
     textAlign: "center",
   },
+  screen: { flex: 1, backgroundColor: "#F3F4F6" }
 });

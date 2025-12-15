@@ -8,6 +8,7 @@ import type {
   CareTeamMember,
   UserRole,
   User,
+  ProfessionalSearchResult
 } from "../types/medical";
 
 // ------------------ axios base ------------------
@@ -80,6 +81,8 @@ export const apiService = {
   // ============ USERS ============
   users: {
     update: async (userId: string, userData: Partial<User>): Promise<User> => {
+      // DEBUG: Imprime la URL completa
+      console.log(`Petición PATCH a: ${api.defaults.baseURL}/users/${userId}`);
       const response = await api.patch(`/users/${userId}`, userData);
       return response.data as User;
     },
@@ -122,6 +125,15 @@ export const apiService = {
       );
       return response.data as { url?: string };
     },
+
+    // PROBANDO
+    search: async (query: string): Promise<ProfessionalSearchResult[]> => {
+      const response = await api.get("/users/search", {
+        params: { query },
+      });
+      return response.data as ProfessionalSearchResult[];
+    },
+
   },
 
   // ============ PATIENTS ============
@@ -282,10 +294,16 @@ export const apiService = {
       return response.data as CareTeamMember[];
     },
 
+    /*getByPatient: async (patientId: string): Promise<CareTeamMember[]> => {
+      const response = await api.get(`/care-team/by-patient/${patientId}`);
+      return response.data as CareTeamMember[];
+    },*/
+
     getByPatient: async (patientId: string): Promise<CareTeamMember[]> => {
       const response = await api.get(`/care-team/by-patient/${patientId}`);
       return response.data as CareTeamMember[];
     },
+
 
     addToPatient: async (
       patientId: string,
