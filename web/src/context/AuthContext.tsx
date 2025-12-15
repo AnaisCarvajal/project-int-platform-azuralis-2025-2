@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
-    isLoading: boolean;
+    isLoading: boolean; // Solo para verificación inicial de autenticación
     login: (email:string, password: string) => Promise<User>;
     logout: () => void;
     register: (userData: any) => Promise<any>;
@@ -16,7 +16,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AuthProvider = ({children}: {children:React.ReactNode}) => {
     const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    // isLoading solo se usa para la verificación inicial de autenticación
+    // NO se modifica durante login/register para evitar conflictos con estados locales
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         checkAuthStatus()
@@ -52,8 +54,7 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
     }
 
     const login = async (email: string, password: string) => {
-        // No usar setIsLoading global aquí para evitar re-renders de HomePage
-        // LoginScreen tiene su propio isLoading local
+        // NO modificamos isLoading aquí - las páginas usan su propio estado local
         try {
             const data = await apiService.login(email, password)
             // Guardamos el token (puede venir como access_token o token)
@@ -79,14 +80,14 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
             // Limpiar tokens si hay error
             localStorage.removeItem("token")
             localStorage.removeItem("user")
-            // Re-throw the error so LoginScreen can handle it
+            setUser(null)
             throw error
         }
     }
 
 
     const register = async (userData: any) => {
-        setIsLoading(true)
+        // NO modificamos isLoading aquí - las páginas usan su propio estado local
         try {
             // Preparación del registroData acordado para el CreateUserDto
             const registrationData = {
@@ -105,7 +106,6 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
             // Retorna la respuesta del registro para procesos adicionales
             return registrationResponse
         } catch (error: any) {
-            setIsLoading(false)
             throw error
         }
     }
