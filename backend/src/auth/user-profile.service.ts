@@ -16,12 +16,37 @@ export class UserProfileService {
     console.log('📸 uploadProfilePicture called for userId:', userId);
     console.log('📸 File details:', { name: file.originalname, size: file.size, type: file.mimetype });
     
-    // Generar nombre único para el archivo
-    const fileName = `${Date.now()}-${file.originalname}`;
     const containerName = 'user-profiles';
+    
+    // PRIMERO: Eliminar foto anterior si existe (tanto de R2 como de Supabase)
+    const existing = await this.userProfilePictureRepository.findOne({ where: { userId } });
+    if (existing) {
+      console.log('🔍 Found existing profile picture:', existing.url);
+      try {
+        // Extraer el path del archivo antiguo desde la URL
+        const oldUrl = existing.url;
+        const urlParts = oldUrl.split('/');
+        const containerIndex = urlParts.indexOf('user-profiles');
+        if (containerIndex !== -1 && containerIndex < urlParts.length - 1) {
+          const oldFilePath = urlParts.slice(containerIndex + 1).join('/');
+          await this.r2StorageService.deleteFile(containerName, oldFilePath);
+          console.log('🗑️ Deleted old profile picture from R2:', oldFilePath);
+        }
+      } catch (error) {
+        console.error('⚠️ Error deleting old profile picture from R2 (continuing):', error);
+      }
+      
+      // Eliminar registro de Supabase
+      await this.userProfilePictureRepository.remove(existing);
+      console.log('🗑️ Removed old database record from Supabase');
+    }
+
+    // SEGUNDO: Generar nombre único usando solo el ID del usuario (evita duplicados)
+    const fileExtension = file.originalname.split('.').pop() || 'jpg';
+    const fileName = `profile.${fileExtension}`;
     const filePath = `profiles/${userId}/${fileName}`;
     
-    // Subir archivo a R2
+    // Subir nuevo archivo a R2
     const url = await this.r2StorageService.uploadFile(
       containerName,
       filePath,
@@ -30,32 +55,7 @@ export class UserProfileService {
     );
     console.log('✅ File uploaded to R2, URL:', url);
 
-    // Eliminar foto anterior si existe
-    const existing = await this.userProfilePictureRepository.findOne({ where: { userId } });
-    if (existing) {
-      console.log('🔍 Found existing profile picture:', existing.url);
-      try {
-        // Extraer el path del archivo antiguo desde la URL
-        const oldUrl = existing.url;
-        // La URL es: https://accountId.r2.cloudflarestorage.com/bucket/user-profiles/profiles/userId/file.jpg
-        // Necesitamos extraer: profiles/userId/file.jpg
-        const urlParts = oldUrl.split('/');
-        const containerIndex = urlParts.indexOf('user-profiles');
-        if (containerIndex !== -1 && containerIndex < urlParts.length - 1) {
-          const oldFilePath = urlParts.slice(containerIndex + 1).join('/');
-          await this.r2StorageService.deleteFile(containerName, oldFilePath);
-          console.log('🗑️ Deleted old profile picture:', oldFilePath);
-        }
-      } catch (error) {
-        console.error('⚠️ Error deleting old profile picture (continuing):', error);
-      }
-      
-      // Eliminar registro de BD
-      await this.userProfilePictureRepository.remove(existing);
-      console.log('🗑️ Removed old database record');
-    }
-
-    // Crear nueva entrada
+    // Crear nueva entrada en Supabase
     const profile = this.userProfilePictureRepository.create({ 
       userId, 
       url, 

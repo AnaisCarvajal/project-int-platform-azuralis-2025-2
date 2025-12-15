@@ -6,7 +6,7 @@ export class UserProfilePicture {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ unique: true })
   userId: string;
 
   @Column()
