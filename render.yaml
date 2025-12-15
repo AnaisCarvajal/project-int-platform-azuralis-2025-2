@@ -2,7 +2,7 @@ services:
   - type: web
     name: frontend-azuralis-project-int-platform
     env: static
-    buildCommand: cd web && npm ci && npm run build
+    buildCommand: cd web && rm -rf node_modules package-lock.json && npm install && npm run build
     staticPublishPath: ./web/dist
     pullRequestPreviewsEnabled: true
     headers:

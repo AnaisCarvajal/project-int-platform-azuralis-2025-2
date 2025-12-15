@@ -75,22 +75,51 @@ export class PatientDocumentsService {
   }
 
   async delete(id: string) {
-    const doc = await this.docsRepo.findOne({ where: { id } });
-    if (!doc) return { message: 'Documento no encontrado' };
+    console.log('🗑️ Iniciando eliminación de documento:', id);
     
-    // Eliminar archivo de R2 Storage si existe
+    const doc = await this.docsRepo.findOne({ where: { id } });
+    if (!doc) {
+      console.log('⚠️ Documento no encontrado en Supabase:', id);
+      return { message: 'Documento no encontrado' };
+    }
+    
+    console.log('📄 Documento encontrado en Supabase:', { id: doc.id, url: doc.url });
+    
+    // PRIMERO: Eliminar archivo de R2 Storage
     if (doc.url) {
       try {
         const containerName = 'patient-documents';
-        // Extraer el path desde la URL (todo después del container)
-        await this.r2StorageService.deleteFile(containerName, doc.url);
+        const url = doc.url;
+        console.log('🔍 URL original:', url);
+        
+        // La URL tiene formato: https://accountId.r2.cloudflarestorage.com/bucket/patient-documents/PATIENT_ID/filename.ext
+        // Necesitamos extraer: PATIENT_ID/filename.ext (lo que viene después de patient-documents/)
+        
+        // Usar split para obtener la parte después de "patient-documents/"
+        const parts = url.split('patient-documents/');
+        if (parts.length > 1) {
+          // Tomar la última parte (en caso de que haya múltiples ocurrencias)
+          const filePath = parts[parts.length - 1];
+          
+          console.log('🔍 Path extraído para R2:', filePath);
+          console.log('🔍 Key final será:', `${containerName}/${filePath}`);
+          
+          await this.r2StorageService.deleteFile(containerName, filePath);
+          console.log('✅ Archivo eliminado de R2 exitosamente');
+        } else {
+          console.error('⚠️ No se pudo extraer el path de la URL:', url);
+        }
       } catch (error) {
-        console.error('⚠️ Error al eliminar archivo de R2 (continuando):', error);
+        console.error('❌ Error al eliminar archivo de R2:', error.message);
+        console.error('❌ Stack:', error.stack);
       }
     }
     
+    // SEGUNDO: Eliminar registro de Supabase
     await this.docsRepo.remove(doc);
-    return { message: 'Documento eliminado correctamente' };
+    console.log('✅ Registro eliminado de Supabase exitosamente');
+    
+    return { message: 'Documento eliminado correctamente de R2 y Supabase' };
   }
 
   /**
