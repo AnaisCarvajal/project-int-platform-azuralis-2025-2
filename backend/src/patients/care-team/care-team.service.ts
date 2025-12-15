@@ -72,6 +72,7 @@ export class CareTeamService {
       where: { 
         patient: { id: patientId },
         userId,
+        status: 'active',
       }
     });
 
@@ -79,10 +80,8 @@ export class CareTeamService {
       return { message: 'Miembro no encontrado' };
     }
 
-    // Marcar como inactivo en lugar de eliminar (para mantener historial)
-    member.status = 'inactive';
-    await this.careTeamRepo.save(member);
-
+    // Eliminar el registro de la base de datos
+    await this.careTeamRepo.remove(member);
     return { message: 'Miembro removido del equipo' };
   }
 }
