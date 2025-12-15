@@ -44,7 +44,8 @@ interface PatientRecordProps {
   onBack: () => void;
 }
 
-export function PatientRecord({ patient, onBack }: PatientRecordProps) {
+export function PatientRecord({ patient: initialPatient, onBack }: PatientRecordProps) {
+  const [patient, setPatient] = useState<Patient>(initialPatient);
   const cancerColor = cancerColors[patient.cancerType];
   const { user } = useAuth();
   const isStaff = user?.role === 'doctor' || user?.role === 'nurse';
@@ -118,6 +119,18 @@ export function PatientRecord({ patient, onBack }: PatientRecordProps) {
     // Poner los documentos del Comité Oncológico al principio
     setDisplayDocuments([...comiteDocs, ...otherDocs]);
   }, [documents]);
+
+  // Función para recargar datos del paciente sin recargar la página
+  const reloadPatientData = async () => {
+    try {
+      const updatedPatient = await apiService.patients.getOne(patient.id);
+      if (updatedPatient) {
+        setPatient(updatedPatient);
+      }
+    } catch (error) {
+      console.error('Error recargando datos del paciente:', error);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("es-CL", {
@@ -599,10 +612,7 @@ export function PatientRecord({ patient, onBack }: PatientRecordProps) {
                 {isStaff && (
                   <ManageCareTeam
                     patient={patient}
-                    onUpdate={() => {
-                      // Recargar datos del paciente si es necesario
-                      window.location.reload();
-                    }}
+                    onUpdate={reloadPatientData}
                   />
                 )}
               </CardContent>
