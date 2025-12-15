@@ -11,9 +11,9 @@ Este frontend proporciona una interfaz de usuario moderna y responsive para la g
 | Tecnología | Versión | Propósito |
 |------------|---------|-----------|
 | React | 19.x | Biblioteca UI |
-| Vite | 6.x | Build tool |
+| Vite | 7.x | Build tool |
 | TypeScript | 5.x | Tipado estático |
-| Tailwind CSS | 4.x | Estilos |
+| Tailwind CSS | 3.x | Estilos |
 | React Router | 7.x | Enrutamiento |
 | Axios | 1.x | Cliente HTTP |
 | Radix UI | - | Componentes accesibles |
@@ -52,17 +52,6 @@ src/
 | Enfermera | `/dashboard-nurse` | Gestionar pacientes asignados, notas clínicas |
 | Tutor | `/dashboard-guardian` | Ver fichas de pacientes a cargo |
 
-## Características Principales
-
-- Autenticación JWT con refresh token
-- Diseño responsive (mobile-first)
-- Acceso de emergencia mediante código QR
-- Gestión de documentos clínicos
-- Sistema de notas para pacientes
-- Personalización por tipo de cáncer (colores)
-- Gestión de equipo de cuidado
-- Subida de fotos de perfil con recorte
-
 ## Instalación
 
 ```bash
@@ -96,9 +85,6 @@ npm run build
 
 # Vista previa de producción
 npm run preview
-
-# Servir build de producción
-npm run serve
 ```
 
 ## Rutas de la Aplicación
@@ -113,67 +99,11 @@ npm run serve
 | `/dashboard-nurse` | Protegido | Dashboard de enfermera |
 | `/dashboard-guardian` | Protegido | Dashboard de tutor |
 
-## Componentes UI
-
-La aplicación utiliza componentes basados en shadcn/ui con Radix UI:
-
-- Accordion, Alert, Avatar, Badge
-- Button, Card, Checkbox, Dialog
-- Dropdown, Form, Input, Label
-- Popover, Select, Tabs, Toast
-- Tooltip, Skeleton, Spinner
-
-## Helpers Disponibles
-
-| Helper | Archivo | Propósito |
-|--------|---------|-----------|
-| `calculateAge` | `CalculateAge.ts` | Calcular edad desde fecha de nacimiento |
-| `getDashboardRoute` | `GetDashboardRoute.ts` | Obtener ruta según rol de usuario |
-| `imageOptimizer` | `ImageOptimizer.ts` | Optimización de imágenes |
-| `validateForm` | `ValidateForm.ts` | Validación de formularios |
-| `validateRut` | `ValidateRut.ts` | Validación de RUT chileno |
-
-## Hooks Personalizados
-
-| Hook | Propósito |
-|------|-----------|
-| `useIsMobile` | Detectar si el dispositivo es móvil |
-| `usePatientData` | Obtener datos del paciente actual |
-
-## Contextos
-
-### AuthContext
-
-Proporciona:
-- `user`: Usuario autenticado
-- `login()`: Iniciar sesión
-- `logout()`: Cerrar sesión
-- `isAuthenticated`: Estado de autenticación
-
-### PatientContext
-
-Proporciona:
-- `patientId`: ID del paciente actual
-- `patientData`: Datos completos del paciente
-- `cancerColor`: Color asociado al tipo de cáncer
-
 ## Despliegue
 
-### Netlify
+El frontend está configurado para desplegarse en Netlify o Render.
 
-El proyecto incluye configuración para Netlify:
-- `public/_redirects`: Configuración de SPA
-- `public/netlify.toml`: Configuración del build
+## Equipo
 
-### Render
-
-También soporta despliegue en Render mediante `serve.json`.
-
-## Accesibilidad
-
-La aplicación implementa:
-- Labels asociados a inputs (`htmlFor`)
-- Atributos ARIA (`aria-label`, `aria-current`, `aria-describedby`)
-- Roles semánticos (`role="alert"`, `role="status"`)
-- Estados de focus visibles
-- Contraste de colores adecuado
+**Azuralis Team** - Universidad Católica del Norte  
+Proyecto Integrador de Software 2025

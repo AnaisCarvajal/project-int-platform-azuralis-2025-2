@@ -44,8 +44,8 @@ export class CareTeamController {
   ) {
     return this.careTeamService.addMemberToPatient(
       patientId, 
-      body.userId, 
-      body.name, 
+      body.userId,
+      body.name,
       body.role
     );
   }
