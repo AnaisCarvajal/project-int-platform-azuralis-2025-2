@@ -178,6 +178,18 @@ export function EditablePatientRecord({ patient: initialPatient, onBack }: Edita
     });
   };
 
+  // Función para recargar datos del paciente sin recargar la página
+  const reloadPatientData = async () => {
+    try {
+      const updatedPatient = await apiService.patients.getOne(patient.id);
+      if (updatedPatient) {
+        setPatient(updatedPatient);
+      }
+    } catch (error) {
+      console.error('Error recargando datos del paciente:', error);
+    }
+  };
+
   const callEmergencyContact = (phone: string) => {
     window.open(`tel:${phone}`, "_self");
   };
@@ -1511,7 +1523,7 @@ export function EditablePatientRecord({ patient: initialPatient, onBack }: Edita
                 </div>
 
                 {/* Manage Care Team */}
-                {isStaff && <ManageCareTeam patient={patient} onUpdate={() => window.location.reload()} />}
+                {isStaff && <ManageCareTeam patient={patient} onUpdate={reloadPatientData} />}
               </CardContent>
             </Card>
           </TabsContent>
