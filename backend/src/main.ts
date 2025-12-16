@@ -15,10 +15,10 @@ async function bootstrap() {
     'https://frontend-azuralis-project-int-platform.onrender.com',
     'https://www.lacito.cl',
     'https://lacito.cl',
-    'http://192.168.1.91:19000',
-    'http://192.168.1.91:8081',
-    'exp://192.168.1.91:8081',
-    'exp://192.168.1.91:19000',
+    'http://192.168.1.88:19000',
+    'http://192.168.1.88:8081',
+    'exp://192.168.1.88:8081',
+    'exp://192.168.1.88:19000',
 
 
 
