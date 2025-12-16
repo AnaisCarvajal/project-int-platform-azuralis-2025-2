@@ -12,12 +12,16 @@ import { User } from './entities/user.entity';
 import { UserProfilePicture } from './entities/user-profile-picture.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { SharedModule } from '../shared/shared.module';
+import { MailService } from '../mail/mail.service';
+import { MailModule } from 'src/mail/mail.module';
+
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, UserProfilePicture]),
     SharedModule,
     PassportModule,
+    MailModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'tu-clave-secreta-super-segura',
       signOptions: { expiresIn: parseInt(process.env.JWT_EXPIRES || '86400') }, //86400 seconds = 1 day 

@@ -5,6 +5,10 @@ import { User } from '../auth/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '../shared/enums/user-role.enum';
+import * as crypto from 'crypto';
+import { MailService } from '../mail/mail.service';
+import { MoreThan } from 'typeorm';
+
 
 @Injectable()
 export class AuthService {
@@ -12,6 +16,7 @@ export class AuthService {
     @InjectRepository(User)
     private usersRepo: Repository<User>,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
   async register(
@@ -115,4 +120,62 @@ export class AuthService {
 
     return userData;
   }
+
+
+  async requestPasswordReset(email: string) {
+  console.log('🔔 Forgot password solicitado para:', email);
+
+  const user = await this.usersRepo.findOne({ where: { email } });
+
+  if (!user) {
+    console.log('⚠️ Usuario NO existe, no se envía correo');
+    return;
+  }
+
+  console.log('✅ Usuario encontrado, enviando correo…');
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(rawToken)
+      .digest('hex');
+
+    user.passwordResetToken = hashedToken;
+    user.passwordResetExpires = new Date(
+      Date.now() + Number(process.env.PASSWORD_RESET_EXPIRES_MINUTES) * 60_000,
+    );
+
+    await this.usersRepo.save(user);
+
+    const link = `${process.env.APP_URL}/reset-password?token=${rawToken}`;
+    console.log('📧 Reset link:', link);
+
+    await this.mailService.sendPasswordReset(user.email, link);
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+
+  const user = await this.usersRepo.findOne({
+    where: {
+      passwordResetToken: hashedToken,
+      passwordResetExpires: MoreThan(new Date()),
+    },
+  });
+
+  if (!user) {
+    throw new UnauthorizedException('Token inválido o expirado');
+  }
+
+  user.password = await bcrypt.hash(newPassword, 12);
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+
+  await this.usersRepo.save(user);
+}
+
+
 }

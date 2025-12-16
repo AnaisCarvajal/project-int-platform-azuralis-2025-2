@@ -3,10 +3,19 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { PatientsModule } from './patients/patients.module';
+import { ThrottlerModule } from '@nestjs/throttler';
+
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+
+    ThrottlerModule.forRoot([
+      {
+        limit: 3,
+        ttl: 60,
+      },
+    ]),
 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
