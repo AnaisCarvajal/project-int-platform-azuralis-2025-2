@@ -63,8 +63,17 @@ export const apiService = {
   },
 
   checkAuthStatus: async () => {
-    // Este método necesita un endpoint en el backend
     const { data } = await api.get("/auth/me")
+    return data
+  },
+
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const { data } = await api.post("/auth/forgot-password", { email })
+    return data
+  },
+
+  resetPassword: async (token: string, newPassword: string): Promise<{ message: string }> => {
+    const { data } = await api.post("/auth/reset-password", { token, newPassword })
     return data
   },
 

@@ -183,10 +183,21 @@ export function LoginScreen() {
               {error && (
                 <Alert className="mt-4 bg-red-50 border-red-200">
                   <AlertDescription className="text-red-800 text-sm">
-                    ⚠️ {error}
+                    {error}
                   </AlertDescription>
                 </Alert>
               )}
+              {/* Forgot password link */}
+              <div className="text-right pt-2">
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-sm text-gray-500 hover:text-gray-700 hover:underline transition-colors"
+                  disabled={isLoading}
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
               {/*Botón para iniciar sesión*/}
               <div className="space-y-2 pt-4">
                 <Button

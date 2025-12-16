@@ -6,6 +6,8 @@ import { ProtectedRoute } from "../components/ProtectedRoute";
 import { HomePage } from "../pages/HomePage";
 import { RegisterScreen } from "../pages/RegisterScreen";
 import { EmergencyAccess } from "../pages/EmergencyAccess";
+import { ForgotPasswordScreen } from "../pages/ForgotPasswordScreen";
+import { ResetPasswordScreen } from "../pages/ResetPasswordScreen";
 
 export function AppRouter() {
     return (
@@ -16,6 +18,10 @@ export function AppRouter() {
 
                 {/* Ruta pública - Registro */}
                 <Route path="/register" element={<RegisterScreen />} />
+
+                {/* Ruta pública - Recuperación de contraseña */}
+                <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
+                <Route path="/reset-password" element={<ResetPasswordScreen />} />
 
                 {/* Ruta pública - Acceso de emergencia vía QR (SIN AUTENTICACIÓN) */}
                 <Route path="/emergency/:qrCode" element={<EmergencyAccess />} />
