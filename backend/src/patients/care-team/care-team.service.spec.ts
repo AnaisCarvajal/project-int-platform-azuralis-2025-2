@@ -230,19 +230,17 @@ describe('CareTeamService', () => {
   // =====================================================
 
   describe('removeMemberFromPatient', () => {
-    it('should mark member as inactive instead of deleting', async () => {
+    it('should remove member from care team', async () => {
       const activeMember = { ...mockCareTeamMember, status: 'active' };
       mockCareTeamRepo.findOne.mockResolvedValue(activeMember);
-      mockCareTeamRepo.save.mockResolvedValue({ ...activeMember, status: 'inactive' });
+      mockCareTeamRepo.remove.mockResolvedValue(activeMember);
 
       const result = await service.removeMemberFromPatient(
         'patient-uuid-789',
         'user-uuid-456',
       );
 
-      expect(mockCareTeamRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'inactive' }),
-      );
+      expect(mockCareTeamRepo.remove).toHaveBeenCalledWith(activeMember);
       expect(result).toEqual({ message: 'Miembro removido del equipo' });
     });
 

@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     react(),
     svgr({
-      // Permite importar SVGs como componentes React con ?react
+      // Allows importing SVGs as React components with ?react
       include: "**/*.svg?react",
     })
   ],
@@ -23,4 +23,11 @@ export default defineConfig({
     sourcemap: false,
   },
   base: '/',
+  // Vitest configuration
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+  },
 })

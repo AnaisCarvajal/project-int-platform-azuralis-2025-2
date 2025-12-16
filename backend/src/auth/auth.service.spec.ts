@@ -5,6 +5,7 @@ import { User } from './entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { UserRole } from '../shared/enums/user-role.enum';
+import { MailService } from '../mail/mail.service';
 import * as bcrypt from 'bcrypt';
 
 // Mock bcrypt module
@@ -17,6 +18,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let mockUserRepository: any;
   let mockJwtService: any;
+  let mockMailService: any;
 
   beforeEach(async () => {
     // Reset all mocks before each test
@@ -32,6 +34,11 @@ describe('AuthService', () => {
       sign: jest.fn(),
     };
 
+    // Mock for MailService
+    mockMailService = {
+      sendPasswordResetEmail: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -42,6 +49,10 @@ describe('AuthService', () => {
         {
           provide: JwtService,
           useValue: mockJwtService,
+        },
+        {
+          provide: MailService,
+          useValue: mockMailService,
         },
       ],
     }).compile();
