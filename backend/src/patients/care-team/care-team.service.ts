@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CareTeamMember } from '../entities/care-team-member.entity';
+import Message from 'tedious/lib/message';
 
 @Injectable()
 export class CareTeamService {
@@ -79,10 +80,8 @@ export class CareTeamService {
       return { message: 'Miembro no encontrado' };
     }
 
-    // Marcar como inactivo en lugar de eliminar (para mantener historial)
-    member.status = 'inactive';
-    await this.careTeamRepo.save(member);
-
-    return { message: 'Miembro removido del equipo' };
+    // eliminar el registro de la base de datos
+    await this.careTeamRepo.remove(member);
+    return { message: 'Miembro removido del equipo'}
   }
 }

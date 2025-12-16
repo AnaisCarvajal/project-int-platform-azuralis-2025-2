@@ -6,6 +6,7 @@ import type { Patient } from "../types/medical";
 import { cancerColors } from "../types/medical";
 import { Users, ChevronRight } from "lucide-react-native";
 import { CancerRibbon } from "./CancerRibbon";
+import { calculateAge } from "../common/helpers/CalculateAge";
 
 interface CareTeamPatientsListProps {
   onPatientSelect: (patient: Patient) => void;
@@ -110,7 +111,7 @@ export function CareTeamPatientsList({ onPatientSelect }: CareTeamPatientsListPr
 
                 <View>
                   <Text style={styles.patientName}>{patient.name}</Text>
-                  <Text style={styles.patientAge}>{patient.age} años</Text>
+                  <Text style={styles.patientAge}>{calculateAge(patient.dateOfBirth)} años</Text>
                 </View>
               </View>
 

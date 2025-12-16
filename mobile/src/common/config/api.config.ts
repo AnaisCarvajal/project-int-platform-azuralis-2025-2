@@ -6,7 +6,7 @@ export const API_CONFIG = {
     process.env.EXPO_PUBLIC_API_URL ||
     (ENV === "web"
       ? "http://localhost:3000"
-      : "http://192.168.1.88:3000"),  // <- cambiar la api
+      : "http://192.168.1.91:3000"),  // <- cambiar la api
   TIMEOUT: 30000,
   WITH_CREDENTIALS: true,
 };

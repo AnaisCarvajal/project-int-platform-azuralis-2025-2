@@ -11,8 +11,12 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { apiService } from "../services/api";
-import type { CareTeamMember, Patient, ProfessionalSearchResult } from "../types/medical";
-import { Users, UserPlus, UserMinus } from "lucide-react-native";
+import type {
+  CareTeamMember,
+  Patient,
+  ProfessionalSearchResult,
+} from "../types/medical";
+import { Users, UserPlus, UserMinus, Search, X } from "lucide-react-native";
 
 interface ManageCareTeamProps {
   patient: Patient;
@@ -26,13 +30,11 @@ export function ManageCareTeam({ patient, onUpdate }: ManageCareTeamProps) {
   const [success, setSuccess] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
 
-  // 🔍 búsqueda de profesionales
+  // 🔍 búsqueda
   const [searchValue, setSearchValue] = useState("");
-  //const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] =
+    useState<ProfessionalSearchResult[]>([]);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
-  const [searchResults, setSearchResults] = useState<ProfessionalSearchResult[]>([]);
-
-
   const [role, setRole] = useState("");
 
   useEffect(() => {
@@ -48,7 +50,6 @@ export function ManageCareTeam({ patient, onUpdate }: ManageCareTeamProps) {
     }
   };
 
-  // 🔍 buscar usuarios
   const searchUsers = async () => {
     if (!searchValue.trim()) return;
 
@@ -64,7 +65,6 @@ export function ManageCareTeam({ patient, onUpdate }: ManageCareTeamProps) {
     }
   };
 
-  // ➕ agregar miembro
   const handleAddMember = async () => {
     setError("");
     setSuccess("");
@@ -115,7 +115,9 @@ export function ManageCareTeam({ patient, onUpdate }: ManageCareTeamProps) {
               await loadCareTeam();
               onUpdate();
             } catch (err: any) {
-              setError(err.response?.data?.message || "Error al remover miembro");
+              setError(
+                err.response?.data?.message || "Error al remover miembro"
+              );
             } finally {
               setLoading(false);
             }
@@ -136,117 +138,303 @@ export function ManageCareTeam({ patient, onUpdate }: ManageCareTeamProps) {
     return labels[role] || role;
   };
 
+  const formatDate = (date: string | Date) => {
+  return new Date(date).toLocaleDateString("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  };
+
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Users color="#2563EB" size={22} />
-          <Text style={styles.headerTitle}>Equipo de Cuidados</Text>
-        </View>
-
-        <TouchableOpacity
-          onPress={() => setShowAddForm(!showAddForm)}
-          style={styles.addButton}
-        >
-          <UserPlus color="white" size={18} />
-          <Text style={styles.addButtonText}>
-            {showAddForm ? "Cancelar" : "Agregar"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      {success ? <Text style={styles.successText}>{success}</Text> : null}
-
-      {/* Formulario */}
-      {showAddForm && (
-        <View style={styles.formCard}>
-          <Text style={styles.label}>Buscar profesional *</Text>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              placeholder="RUT o Email"
-              value={searchValue}
-              onChangeText={setSearchValue}
-            />
-            <TouchableOpacity onPress={searchUsers} style={styles.searchButton}>
-              <Text style={{ color: "white" }}>Buscar</Text>
-            </TouchableOpacity>
-          </View>
-
-          {searchResults.map((u) => (
-            <TouchableOpacity
-              key={u.id}
-              style={[
-                styles.userResult,
-                selectedUser?.id === u.id && styles.userSelected,
-              ]}
-              onPress={() => setSelectedUser(u)}
-            >
-              <Text style={{ fontWeight: "600" }}>{u.name}</Text>
-              <Text style={{ fontSize: 12, color: "#6B7280" }}>{u.email}</Text>
-            </TouchableOpacity>
-          ))}
-
-          <Text style={styles.label}>Rol *</Text>
-          <View style={styles.pickerContainer}>
-            <Picker selectedValue={role} onValueChange={setRole}>
-              <Picker.Item label="Selecciona un rol" value="" />
-              <Picker.Item label="Oncólogo Principal" value="oncologo_principal" />
-              <Picker.Item label="Cirujano" value="cirujano" />
-              <Picker.Item label="Radiólogo" value="radiologo" />
-              <Picker.Item label="Enfermera Jefe" value="enfermera_jefe" />
-              <Picker.Item label="Consultor" value="consultor" />
-            </Picker>
+      <View style={styles.teamCard}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Users color="#2563EB" size={22} />
+            <Text style={styles.headerTitle}>Equipo de Cuidados</Text>
           </View>
 
           <TouchableOpacity
-            onPress={handleAddMember}
-            disabled={loading}
-            style={styles.primaryButton}
+            onPress={() => setShowAddForm(!showAddForm)}
+            style={styles.iconButton}
           >
-            {loading ? <ActivityIndicator color="white" /> : <Text style={styles.primaryButtonText}>Agregar miembro</Text>}
+            {showAddForm ? (
+              <X color="#374151" size={22} />
+            ) : (
+              <UserPlus color="#2563EB" size={22} />
+            )}
           </TouchableOpacity>
         </View>
-      )}
 
-      {/* Lista */}
-      {careTeam.map((member) => (
-        <View key={member.userId} style={styles.memberCard}>
-          <View>
-            <Text style={styles.memberName}>{member.name}</Text>
-            <Text style={styles.memberRole}>{getRoleLabel(member.role)}</Text>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {success ? <Text style={styles.successText}>{success}</Text> : null}
+
+        {/* Formulario */}
+        {showAddForm && (
+          <View style={styles.formCard}>
+            <Text style={styles.label}>Buscar profesional *</Text>
+
+            <View style={styles.searchRow}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="RUT, Nombre o Email"
+                value={searchValue}
+                onChangeText={setSearchValue}
+              />
+              <TouchableOpacity
+                onPress={searchUsers}
+                style={styles.searchIconButton}
+              >
+                <Search color="white" size={18} />
+              </TouchableOpacity>
+            </View>
+
+            {searchResults.map((u) => (
+              <TouchableOpacity
+                key={u.id}
+                style={[
+                  styles.userResultCard,
+                  selectedUser?.id === u.id && styles.userSelected,
+                ]}
+                onPress={() => setSelectedUser(u)}
+              >
+                <Text style={styles.userName}>{u.name}</Text>
+                <Text style={styles.userMeta}>{u.email}</Text>
+              </TouchableOpacity>
+            ))}
+
+            <Text style={styles.label}>Rol *</Text>
+            <View style={styles.pickerContainer}>
+              <Picker selectedValue={role} onValueChange={setRole}>
+                <Picker.Item label="Selecciona un rol" value="" />
+                <Picker.Item
+                  label="Oncólogo Principal"
+                  value="oncologo_principal"
+                />
+                <Picker.Item label="Cirujano" value="cirujano" />
+                <Picker.Item label="Radiólogo" value="radiologo" />
+                <Picker.Item
+                  label="Enfermera Jefe"
+                  value="enfermera_jefe"
+                />
+                <Picker.Item label="Consultor" value="consultor" />
+              </Picker>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleAddMember}
+              disabled={loading}
+              style={styles.primaryButton}
+            >
+              {loading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Agregar miembro</Text>
+              )}
+            </TouchableOpacity>
           </View>
+        )}
 
-          <TouchableOpacity onPress={() => handleRemoveMember(member.userId)}>
-            <UserMinus color="#DC2626" size={18} />
-          </TouchableOpacity>
-        </View>
-      ))}
+        {/* Lista */}
+        {careTeam.map((member) => (
+          <View key={member.userId} style={styles.memberCard}>
+            <View style={styles.memberInfo}>
+              <Text style={styles.memberName}>{member.name}</Text>
+              <Text style={styles.memberRole}>
+                {getRoleLabel(member.role)}
+              </Text>
+
+              {member.assignedAt && (
+                <Text style={styles.memberDate}>
+                  Asignado: {formatDate(member.assignedAt)}
+                </Text>
+              )}
+            </View>
+
+            <TouchableOpacity
+              onPress={() => handleRemoveMember(member.userId)}
+            >
+              <UserMinus color="#DC2626" size={18} />
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16 },
-  headerLeft: { flexDirection: "row", gap: 8 },
-  headerTitle: { fontSize: 18, fontWeight: "600" },
-  addButton: { backgroundColor: "#2563EB", padding: 8, borderRadius: 8, flexDirection: "row", gap: 4 },
-  addButtonText: { color: "white" },
-  formCard: { backgroundColor: "#EFF6FF", padding: 16, borderRadius: 12 },
-  label: { fontWeight: "500", marginBottom: 4 },
-  input: { borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 8 },
-  pickerContainer: { borderWidth: 1, borderRadius: 8, marginBottom: 12 },
-  primaryButton: { backgroundColor: "#2563EB", padding: 12, borderRadius: 8, alignItems: "center" },
-  primaryButtonText: { color: "white", fontWeight: "600" },
-  errorText: { color: "#B91C1C" },
-  successText: { color: "#16A34A" },
-  memberCard: { flexDirection: "row", justifyContent: "space-between", padding: 12, backgroundColor: "white", borderRadius: 8, marginBottom: 8 },
-  memberName: { fontWeight: "600" },
-  memberRole: { color: "#6B7280" },
-  searchButton: { backgroundColor: "#2563EB", padding: 10, borderRadius: 8 },
-  userResult: { padding: 8, borderBottomWidth: 1, borderColor: "#E5E7EB" },
-  userSelected: { backgroundColor: "#DBEAFE" },
+  container: {
+    padding: 16,
+  },
+
+  teamCard: {
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  headerLeft: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+
+  addButton: {
+    backgroundColor: "#2563EB",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 6,
+    alignItems: "center",
+  },
+
+  addButtonText: {
+    color: "white",
+    fontWeight: "600",
+  },
+
+  formCard: {
+    backgroundColor: "#F8FAFC",
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+
+  label: {
+    fontWeight: "600",
+    marginBottom: 6,
+    marginTop: 8,
+  },
+
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+
+  searchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "white",
+  },
+
+  searchIconButton: {
+    backgroundColor: "#2563EB",
+    padding: 10,
+    borderRadius: 10,
+  },
+
+  userResultCard: {
+    backgroundColor: "white",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+
+  userSelected: {
+    backgroundColor: "#DBEAFE",
+    borderColor: "#2563EB",
+  },
+
+  userName: {
+    fontWeight: "600",
+    fontSize: 14,
+  },
+
+  userMeta: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
+  },
+
+  pickerContainer: {
+    borderWidth: 1,
+    borderRadius: 10,
+    marginBottom: 12,
+    borderColor: "#D1D5DB",
+    backgroundColor: "white",
+  },
+
+  primaryButton: {
+    backgroundColor: "#2563EB",
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+
+  primaryButtonText: {
+    color: "white",
+    fontWeight: "600",
+  },
+
+  memberCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 14,
+    backgroundColor: "#F9FAFB",
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+
+  memberInfo: {
+    flex: 1,
+  },
+
+  memberName: {
+    fontWeight: "600",
+  },
+
+  memberRole: {
+    color: "#6B7280",
+  },
+
+  memberDate: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    marginTop: 4,
+  },
+
+  errorText: {
+    color: "#B91C1C",
+    marginBottom: 8,
+  },
+
+  successText: {
+    color: "#16A34A",
+    marginBottom: 8,
+  },
+  
+  iconButton: {
+  padding: 6,
+  borderRadius: 999,
+  },
 });

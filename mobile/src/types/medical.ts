@@ -41,7 +41,7 @@ export interface CareTeamMember {
   userId: string;
   name: string;
   role: CareTeamRole;
-  assignedAt: Date;
+  assignedAt: string | Date;
   status: 'active' | 'inactive';
 }
 

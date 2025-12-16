@@ -84,7 +84,7 @@ export class UsersService {
   }
 
   //VEAMOS SI SIRVE
- async search(query: string) {
+  async search(query: string) {
     if (!query || !query.trim()) {
       return [];
     }
