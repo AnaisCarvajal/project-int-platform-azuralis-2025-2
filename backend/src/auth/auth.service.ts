@@ -147,59 +147,52 @@ export class AuthService {
 
 
   async requestPasswordReset(email: string) {
-  console.log('🔔 Forgot password solicitado para:', email);
+    const user = await this.usersRepo.findOne({ where: { email } });
 
-  const user = await this.usersRepo.findOne({ where: { email } });
+    if (!user) {
+      return;
+    }
 
-  if (!user) {
-    console.log('⚠️ Usuario NO existe, no se envía correo');
-    return;
-  }
-
-  console.log('✅ Usuario encontrado, enviando correo…');
-
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedCode = crypto
       .createHash('sha256')
-      .update(rawToken)
+      .update(code)
       .digest('hex');
 
-    user.passwordResetToken = hashedToken;
+    user.passwordResetToken = hashedCode;
     user.passwordResetExpires = new Date(
       Date.now() + Number(process.env.PASSWORD_RESET_EXPIRES_MINUTES) * 60_000,
     );
 
     await this.usersRepo.save(user);
 
-    const link = `${process.env.APP_URL}/reset-password?token=${rawToken}`;
-    console.log('📧 Reset link:', link);
-
-    await this.mailService.sendPasswordReset(user.email, link);
+    await this.mailService.sendPasswordReset(user.email, code);
   }
 
   async resetPassword(token: string, newPassword: string) {
-  const hashedToken = crypto
-    .createHash('sha256')
-    .update(token)
-    .digest('hex');
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
 
-  const user = await this.usersRepo.findOne({
-    where: {
-      passwordResetToken: hashedToken,
-      passwordResetExpires: MoreThan(new Date()),
-    },
-  });
+    const user = await this.usersRepo.findOne({
+      where: {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: MoreThan(new Date()),
+      },
+    });
 
-  if (!user) {
-    throw new UnauthorizedException('Token inválido o expirado');
+    if (!user) {
+      throw new UnauthorizedException('Código inválido o expirado');
+    }
+
+    user.password = await bcrypt.hash(newPassword, 12);
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    await this.usersRepo.save(user);
   }
-
-  user.password = await bcrypt.hash(newPassword, 12);
-  user.passwordResetToken = undefined;
-  user.passwordResetExpires = undefined;
-
-  await this.usersRepo.save(user);
-}
 
 
 }

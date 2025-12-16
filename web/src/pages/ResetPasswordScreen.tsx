@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CancerRibbon } from "../components/CancerRibbon";
 import LogoUniversidad from "../assets/logo_ucn.svg?react";
 import {
@@ -18,10 +18,7 @@ import { apiService } from "@/services/api";
 
 export function ResetPasswordScreen() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const tokenFromUrl = searchParams.get("token");
-  
-  const tokenRef = useRef<string | null>(null);
+  const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -30,22 +27,12 @@ export function ResetPasswordScreen() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (tokenFromUrl) {
-      tokenRef.current = tokenFromUrl;
-      navigate("/reset-password", { replace: true });
-    } else if (!tokenRef.current) {
-      setError("Token de recuperación no válido o faltante.");
-    }
-  }, [tokenFromUrl, navigate]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    const token = tokenRef.current;
-    if (!token) {
-      setError("Token de recuperación no válido.");
+    if (!code || code.length !== 6) {
+      setError("Ingresa el código de 6 dígitos enviado a tu correo");
       return;
     }
 
@@ -67,11 +54,11 @@ export function ResetPasswordScreen() {
     setIsLoading(true);
 
     try {
-      await apiService.resetPassword(token, password);
+      await apiService.resetPassword(code, password);
       setSuccess(true);
     } catch (err: any) {
       if (err.response?.status === 401) {
-        setError("El enlace ha expirado o no es válido. Solicita uno nuevo.");
+        setError("El código ha expirado o no es válido. Solicita uno nuevo.");
       } else if (err.response?.status === 429) {
         setError("Demasiados intentos. Por favor espera unos minutos.");
       } else if (err.response?.status >= 500) {
@@ -142,14 +129,35 @@ export function ResetPasswordScreen() {
 
         <Card>
           <CardHeader className="flex items-center justify-center">
-            <CardTitle>Nueva contraseña</CardTitle>
+            <CardTitle>Restablecer contraseña</CardTitle>
             <CardDescription>
-              Ingresa tu nueva contraseña para restablecer el acceso a tu cuenta.
+              Ingresa el código de 6 dígitos enviado a tu correo y tu nueva contraseña.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit}>
+              {/* Code input */}
               <div className="space-y-2">
+                <Label htmlFor="code">Código de verificación</Label>
+                <Input
+                  id="code"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={code}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "");
+                    setCode(value);
+                    if (error) setError("");
+                  }}
+                  disabled={isLoading}
+                  className={`text-center text-2xl tracking-widest font-semibold ${error ? "border-red-300" : ""}`}
+                />
+              </div>
+
+              {/* Password input */}
+              <div className="space-y-2 pt-4">
                 <Label htmlFor="password">Nueva contraseña</Label>
                 <div className="relative">
                   <Input
@@ -161,7 +169,7 @@ export function ResetPasswordScreen() {
                       setPassword(e.target.value);
                       if (error) setError("");
                     }}
-                    disabled={isLoading || !tokenRef.current}
+                    disabled={isLoading}
                     className={error ? "border-red-300" : ""}
                   />
                   <button
@@ -175,6 +183,7 @@ export function ResetPasswordScreen() {
                 </div>
               </div>
 
+              {/* Confirm password input */}
               <div className="space-y-2 pt-4">
                 <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
                 <div className="relative">
@@ -187,7 +196,7 @@ export function ResetPasswordScreen() {
                       setConfirmPassword(e.target.value);
                       if (error) setError("");
                     }}
-                    disabled={isLoading || !tokenRef.current}
+                    disabled={isLoading}
                     className={error ? "border-red-300" : ""}
                   />
                   <button
@@ -212,7 +221,7 @@ export function ResetPasswordScreen() {
               <div className="space-y-2 pt-4">
                 <Button
                   type="submit"
-                  disabled={isLoading || !tokenRef.current}
+                  disabled={isLoading}
                   variant="outline"
                   className="w-full bg-[#fa8fb5] hover:bg-[#dd6d94]"
                 >
@@ -227,7 +236,7 @@ export function ResetPasswordScreen() {
                   className="text-sm text-gray-600 hover:text-gray-800 hover:underline transition-colors"
                   disabled={isLoading}
                 >
-                  Solicitar nuevo enlace
+                  Solicitar nuevo código
                 </button>
               </div>
             </form>
