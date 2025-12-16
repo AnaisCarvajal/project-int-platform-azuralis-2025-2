@@ -55,6 +55,13 @@ export class MailService {
                 </div>
               </div>
               
+              <!-- Button to reset page -->
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="${process.env.APP_URL}/reset-password" style="display: inline-block; background-color: #ff6299; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+                  Ir a restablecer contraseña
+                </a>
+              </div>
+              
               <p style="color: #888; font-size: 13px; line-height: 1.5; margin: 20px 0; text-align: center;">
                 Este código expirará en <strong>15 minutos</strong> por seguridad.
               </p>
