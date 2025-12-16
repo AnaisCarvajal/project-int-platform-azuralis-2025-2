@@ -6,6 +6,7 @@ import type { Patient } from "../types/medical";
 import { apiService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { ManageCareTeam } from "./ManageCareTeam";
+import { calculateAge } from "../common/helpers/CalculateAge";
 
 interface PatientRecordProps {
   patient: Patient;
@@ -122,7 +123,7 @@ export function PatientRecord({ patient, onBack }: PatientRecordProps) {
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>{patient.name}</Text>
             <Text style={styles.meta}>
-              {patient.age} años • RUT: {patient.rut}
+              {calculateAge(patient.dateOfBirth)} años • RUT: {patient.rut}
             </Text>
             <View style={styles.badgeRow}>
               <View

@@ -6,10 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { CancerRibbon } from "../components/CancerRibbon";
 //import LogoUCN from "../assets/icons/logo_ucn.svg";
 import { Image } from "react-native";
-import {
-  validateRegistrationForm,
-  formatRUT,
-} from "../common/helpers/ValidateForm";
+import {validateRegistrationForm,formatRUT,} from "../common/helpers/ValidateForm";
 import type { RegisterFormData, UserRole } from "../types/medical";
 import type { FieldErrors } from "../common/helpers/ValidateForm";
 
@@ -28,32 +25,40 @@ export function RegisterScreen() {
   });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [successMessage, setSuccessMessage] = useState("");
-  const [rawRut, setRawRut] = useState("");
+  const [rutRaw, setRutRaw] = useState("");
 
 
-  const handleInputChange = (field: keyof RegisterFormData, value: string) => {
-  let processedValue = value;
 
-  if (field === "rut") {
-    // 🔹 limpia y formatea automáticamente (sin puntos ni guion al escribir)
-    const cleaned = value.replace(/[^\dkK]/g, "");
-    processedValue = formatRUT(cleaned);
-  }
+  const handleInputChange = (
+    field: keyof RegisterFormData,
+    value: string
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
 
-  setFormData((prev) => ({ ...prev, [field]: processedValue }));
+    if (fieldErrors[field]) {
+      const newErrors = { ...fieldErrors };
+      delete newErrors[field];
+      setFieldErrors(newErrors);
+    }
+  };
 
-  // 🔹 elimina error visual mientras se corrige el campo
-  if (fieldErrors[field]) {
-    const newErrors = { ...fieldErrors };
-    delete newErrors[field];
-    setFieldErrors(newErrors);
-  }
-};
 
 
   const handleSubmit = async () => {
     setSuccessMessage("");
     setFieldErrors({});
+
+    // 🔹 asegurar que el RUT esté sincronizado
+    if (rutRaw && !formData.rut) {
+      setFormData((prev) => ({
+        ...prev,
+        rut: formatRUT(rutRaw),
+      }));
+    }
+
 
     const { isValid, errors } = validateRegistrationForm(formData);
     if (!isValid) {
@@ -160,39 +165,40 @@ export function RegisterScreen() {
             {fieldErrors.name && <Text style={styles.error}>{fieldErrors.name}</Text>}
           </View>
 
-         <View style={styles.field}>
+        <View style={styles.field}>
         <Text style={styles.label}>RUT</Text>
+
         <TextInput
           style={[styles.input, fieldErrors.rut && styles.inputError]}
-          placeholder="12.345.678-9"
-          value={formData.rut}
+          placeholder="Sin puntos ni guion"
+          value={rutRaw}
+          keyboardType="default"
+          autoCapitalize="characters"
           onChangeText={(text) => {
-            // 🔹 Elimina todo lo que no sea número o K/k
-            const cleaned = text.replace(/[^\dkK]/g, "");
-            // 🔹 Aplica formato nuevo
-            const formatted = formatRUT(cleaned);
+            const cleaned = text.replace(/[^\dkK]/g, "").toUpperCase();
+            setRutRaw(cleaned);
 
-            // ⚡ Solo actualiza el estado si realmente cambió
-            if (formatted !== formData.rut) {
-              setFormData((prev) => ({ ...prev, rut: formatted }));
-              setRawRut(cleaned);
-            }
-
-            // 🔹 Limpia error si había
             if (fieldErrors.rut) {
               const newErrors = { ...fieldErrors };
               delete newErrors.rut;
               setFieldErrors(newErrors);
             }
           }}
-          keyboardType="default"
-          autoCapitalize="characters"
-          selection={{
-            start: formData.rut.length,
-            end: formData.rut.length,
-          }} // 👈 fuerza el cursor al final
+          onBlur={() => {
+            if (!rutRaw) return;
+
+            const formatted = formatRUT(rutRaw);
+
+            setFormData((prev) => ({
+              ...prev,
+              rut: formatted,
+            }));
+          }}
         />
-        {fieldErrors.rut && <Text style={styles.error}>{fieldErrors.rut}</Text>}
+
+        {fieldErrors.rut && (
+          <Text style={styles.error}>{fieldErrors.rut}</Text>
+        )}
       </View>
 
 

@@ -25,57 +25,62 @@ export function CompleteProfileForm({ onComplete }: { onComplete: () => void }) 
     emergencyContactPhone: "",
   });
 
+
+
   const handleChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-    try {
-      const allergiesArray = formData.allergies
-        ? formData.allergies.split(",").map((a) => a.trim()).filter((a) => a)
-        : [];
+  try {
+    const allergiesArray = formData.allergies
+      ? formData.allergies.split(",").map(a => a.trim()).filter(Boolean)
+      : [];
 
-      const medicationsArray = formData.currentMedications
-        ? formData.currentMedications.split(",").map((m) => m.trim()).filter((m) => m)
-        : [];
+    const medicationsArray = formData.currentMedications
+      ? formData.currentMedications.split(",").map(m => m.trim()).filter(Boolean)
+      : [];
 
-      const patientData = {
-        name: user?.name || "",
-        rut: user?.rut || "",
-        dateOfBirth: formData.dateOfBirth,
-        diagnosis: formData.diagnosis,
-        stage: formData.stage,
-        cancerType: formData.cancerType as CancerType,
-        allergies: allergiesArray,
-        currentMedications: medicationsArray,
-        treatmentSummary: formData.treatmentSummary,
-        emergencyContacts: formData.emergencyContactName
-        ? [
-            {
-              name: formData.emergencyContactName,
-              relationship: formData.emergencyContactRelationship,
-              phone: formData.emergencyContactPhone,
-            },
-          ]
-        : [],
-      };
+    // 1️⃣ Crear paciente (SIN emergencyContacts)
+    const createdPatient = await apiService.patients.create({
+      name: user?.name || "",
+      rut: user?.rut || "",
+      dateOfBirth: formData.dateOfBirth,
+      diagnosis: formData.diagnosis,
+      stage: formData.stage,
+      cancerType: formData.cancerType as CancerType,
+      allergies: allergiesArray,
+      currentMedications: medicationsArray,
+      treatmentSummary: formData.treatmentSummary,
+    });
 
-      await apiService.patients.create(patientData);
-      onComplete();
-    } catch (err: any) {
-      console.error("Error al crear perfil:", err);
-      setError(
-        err.response?.data?.message ||
-          "Error al guardar los datos. Por favor intenta nuevamente."
-      );
-    } finally {
-      setLoading(false);
+    if (formData.emergencyContactName?.trim()) {
+      await apiService.patients.update(createdPatient.id, {
+        emergencyContacts: [
+          {
+            name: formData.emergencyContactName.trim(),
+            relationship: formData.emergencyContactRelationship?.trim() || "",
+            phone: formData.emergencyContactPhone?.trim() || "",
+          },
+        ],
+      });
     }
-    
-  };
+
+    onComplete();
+  } catch (err: any) {
+    console.error("Error al crear perfil:", err);
+    setError(
+      err.response?.data?.message ||
+        "Error al guardar los datos. Por favor intenta nuevamente."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <KeyboardAvoidingView

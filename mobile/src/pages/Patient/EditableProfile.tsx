@@ -1,8 +1,9 @@
 // EditableProfile.mobile.tsx
 import React, { useEffect, useRef, useState } from "react";
-import { View,Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Image, ActivityIndicator, Alert, Linking,} from "react-native";
+import { View,Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Image, ActivityIndicator, Alert, Linking, Platform, Pressable} from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { useAuth } from "../../context/AuthContext";
 import { usePatientData } from "../../hooks/usePatientData";
@@ -34,6 +35,8 @@ export function EditableProfile() {
   const [editingContacts, setEditingContacts] = useState(false);
   const [editingOperations, setEditingOperations] = useState(false);
   const [editingTreatment, setEditingTreatment] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState<number | null>(null);
+
 
   // Temporales
   const [tempName, setTempName] = useState("");
@@ -137,9 +140,22 @@ export function EditableProfile() {
     setTempOperations([...patient.operations]);
     setEditingOperations(true);
   };
-  const saveOperations = async () => {
-    if (await saveField("operations", tempOperations)) setEditingOperations(false);
-  };
+ 
+  const addOperation = () => setTempOperations((prev) => [...prev, { date: "", procedure: "", hospital: "" }]);
+    const removeOperation = (index: number) => setTempOperations((prev) => prev.filter((_, i) => i !== index));
+    const updateOperation = (index: number, field: keyof Operation, value: string) => {
+      setTempOperations((prev) => {
+        const copy = [...prev];
+        copy[index] = { ...copy[index], [field]: value };
+        return copy;
+      });
+    };
+    const saveOperations = async () => {
+      const ok = await saveField("operations", tempOperations);
+      if (ok) setEditingOperations(false);
+    };
+
+
 
   // Tratamiento
   const startEditingTreatment = () => {
@@ -746,16 +762,29 @@ const handleImageUpload = async (uri: string) => {
                   placeholder="Procedimiento"
                 />
                 {/* En mobile simple: campo de texto para fecha (YYYY-MM-DD). Si usas DateTimePicker, lo puedes integrar aquí. */}
+                <Pressable onPress={() => setShowDatePicker(index)}>
                 <TextInput
-                  style={styles.input}
+                  placeholder="Fecha"
                   value={op.date}
-                  onChangeText={(v) => {
-                    setTempOperations((prev) =>
-                      prev.map((it, idx) => (idx === index ? { ...it, date: v } : it))
-                    );
-                  }}
-                  placeholder="Fecha (YYYY-MM-DD)"
+                  editable={false}
+                  style={styles.input}
                 />
+              </Pressable>
+
+              {showDatePicker === index && (
+                <DateTimePicker
+                  value={op.date ? new Date(op.date) : new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={(_, selectedDate) => {
+                    setShowDatePicker(null);
+                    if (selectedDate) {
+                      updateOperation(index, "date", selectedDate.toISOString());
+                    }
+                  }}
+                />
+              )}
+
                 <TextInput
                   style={styles.input}
                   value={op.hospital}

@@ -24,13 +24,14 @@ interface StepProps {
   error?: string;
 }
 
+
 // 🩺 STEP 1
 export const Step1 = React.memo(({ formData, handleChange, setStep }: StepProps) => (
   <View>
     <Text style={styles.label}>Fecha de Nacimiento *</Text>
     <TextInput
       style={styles.input}
-      placeholder="YYYY-MM-DD"
+      placeholder="AAAA-MM-DD"
       value={formData.dateOfBirth}
       onChangeText={(v) => handleChange("dateOfBirth", v)}
     />

@@ -470,6 +470,7 @@ export function EditablePatientRecord({
     setTempOperations([]);
     setEditingOperations(false);
   };
+  
   const addOperation = () => setTempOperations((prev) => [...prev, { date: "", procedure: "", hospital: "" }]);
   const removeOperation = (index: number) => setTempOperations((prev) => prev.filter((_, i) => i !== index));
   const updateOperation = (index: number, field: keyof Operation, value: string) => {
