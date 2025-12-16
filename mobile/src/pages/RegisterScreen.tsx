@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import {View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet, KeyboardAvoidingView, Platform,} from "react-native";
+import React, { useState,  } from "react";
+import {View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Modal,} from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
@@ -9,6 +9,11 @@ import { Image } from "react-native";
 import {validateRegistrationForm,formatRUT,} from "../common/helpers/ValidateForm";
 import type { RegisterFormData, UserRole } from "../types/medical";
 import type { FieldErrors } from "../common/helpers/ValidateForm";
+
+import Markdown from "react-native-markdown-display";
+import termsText from "../assets/legal/terms";
+
+
 
 export function RegisterScreen() {
   const navigation = useNavigation();
@@ -27,7 +32,10 @@ export function RegisterScreen() {
   const [successMessage, setSuccessMessage] = useState("");
   const [rutRaw, setRutRaw] = useState("");
 
-
+  //probanding
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  
 
   const handleInputChange = (
     field: keyof RegisterFormData,
@@ -59,7 +67,15 @@ export function RegisterScreen() {
       }));
     }
 
+    // PROBANDO
+    if (formData.role === "patient" && !acceptedTerms) {
+      setFieldErrors({
+        general: "Debes aceptar los Términos y Condiciones para registrarte.",
+      });
+      return;
+    }
 
+    
     const { isValid, errors } = validateRegistrationForm(formData);
     if (!isValid) {
       setFieldErrors(errors);
@@ -201,8 +217,6 @@ export function RegisterScreen() {
         )}
       </View>
 
-
-
           <View style={styles.field}>
             <Text style={styles.label}>Correo electrónico</Text>
             <TextInput
@@ -277,11 +291,59 @@ export function RegisterScreen() {
             </Text>
           )}
 
-          {/* Botón */}
+          {/* PROBANDO */}
+          {formData.role === "patient" && (
+          <TouchableOpacity
+            style={styles.termsRow}
+            onPress={() => setAcceptedTerms((prev) => !prev)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
+              {acceptedTerms && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+
+            <Text style={styles.termsText}>
+              Acepto los{" "}
+              <Text
+                style={styles.termsLink}
+                onPress={() => setShowTerms(true)}
+              >
+                Términos y Condiciones
+              </Text>{" "}
+              y la{" "}
+              <Text style={styles.termsLink}>
+                Política de Privacidad
+              </Text>
+            </Text>
+          </TouchableOpacity>
+        )}
+
+          {/* Botón 
           <TouchableOpacity
             style={[styles.button, isLoading && { opacity: 0.7 }]}
             onPress={handleSubmit}
             disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Registrarse</Text>
+            )}
+          </TouchableOpacity>*/}
+          {/* PROBANDO */}
+          <TouchableOpacity
+            style={[
+              styles.button,
+              (isLoading ||
+                (formData.role === "patient" && !acceptedTerms)) && {
+                opacity: 0.6,
+              },
+            ]}
+            onPress={handleSubmit}
+            disabled={
+              isLoading ||
+              (formData.role === "patient" && !acceptedTerms)
+            }
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
@@ -309,6 +371,47 @@ export function RegisterScreen() {
           </Text>
           <Text style={styles.footerText}>© 2025 Azuralis</Text>
         </View>
+
+        <Modal
+          visible={showTerms}
+          animationType="slide"
+          transparent
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>
+                Términos y Condiciones
+              </Text>
+
+            <ScrollView style={{ maxHeight: 400, marginTop: 12 }}>
+              <Markdown style={markdownStyles}>
+                {termsText}
+              </Markdown>
+            </ScrollView>
+
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalCancel}
+                  onPress={() => setShowTerms(false)}
+                >
+                  <Text style={styles.modalCancelText}>Cerrar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.modalAccept}
+                  onPress={() => {
+                    setAcceptedTerms(true);
+                    setShowTerms(false);
+                  }}
+                >
+                  <Text style={styles.modalAcceptText}>Aceptar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -364,4 +467,128 @@ const styles = StyleSheet.create({
   },
   footer: { alignItems: "center", marginTop: 10 },
   footerText: { color: "#6B7280", fontSize: 12 },
+
+  // PROBANDO
+  termsRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: 12,
+  gap: 10,
+},
+
+checkbox: {
+  width: 22,
+  height: 22,
+  borderRadius: 6,
+  borderWidth: 1.5,
+  borderColor: "#9CA3AF",
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+checkboxChecked: {
+  backgroundColor: "#2563EB",
+  borderColor: "#2563EB",
+},
+
+checkmark: {
+  color: "white",
+  fontWeight: "700",
+},
+
+termsText: {
+  flex: 1,
+  color: "#374151",
+  fontSize: 13,
+},
+
+termsLink: {
+  color: "#2563EB",
+  fontWeight: "600",
+},
+
+modalOverlay: {
+  flex: 1,
+  backgroundColor: "rgba(0,0,0,0.4)",
+  justifyContent: "center",
+  padding: 16,
+},
+
+modalCard: {
+  backgroundColor: "white",
+  borderRadius: 16,
+  padding: 16,
+  maxHeight: "80%",
+},
+
+modalTitle: {
+  fontSize: 18,
+  fontWeight: "700",
+  textAlign: "center",
+},
+
+modalText: {
+  fontSize: 14,
+  color: "#374151",
+  lineHeight: 20,
+},
+
+modalButtons: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  marginTop: 16,
+  gap: 12,
+},
+
+modalCancel: {
+  flex: 1,
+  padding: 12,
+  borderRadius: 10,
+  backgroundColor: "#E5E7EB",
+  alignItems: "center",
+},
+
+modalCancelText: {
+  color: "#374151",
+  fontWeight: "600",
+},
+
+modalAccept: {
+  flex: 1,
+  padding: 12,
+  borderRadius: 10,
+  backgroundColor: "#2563EB",
+  alignItems: "center",
+},
+
+modalAcceptText: {
+  color: "white",
+  fontWeight: "600",
+},
+
 });
+
+const markdownStyles = {
+  body: {
+    color: "#374151",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  heading1: {
+    fontSize: 20,
+    fontWeight: "bold" as const,
+    marginBottom: 8,
+  },
+  heading2: {
+    fontSize: 16,
+    fontWeight: "bold" as const,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  strong: {
+    fontWeight: "bold" as const,
+  },
+  bullet_list: {
+    marginLeft: 8,
+  },
+};
