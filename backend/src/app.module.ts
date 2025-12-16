@@ -6,9 +6,6 @@ import { PatientsModule } from './patients/patients.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 
 
-import * as crypto from 'crypto';   //problema del typeorm
-(global as any).crypto = crypto;
-
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),

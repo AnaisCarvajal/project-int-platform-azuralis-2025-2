@@ -3,7 +3,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -14,16 +13,7 @@ async function bootstrap() {
     'http://localhost:3000',
     'https://frontend-azuralis-project-int-platform.onrender.com',
     'https://www.lacito.cl',
-    'https://lacito.cl',
-    'http://192.168.1.91:19000',
-    'http://192.168.1.91:8081',
-    'exp://192.168.1.91:8081',
-    'exp://192.168.1.91:19000',
-
-
-
-
-
+    'https://lacito.cl'
   ];
 
   // Si hay FRONTEND_URL_PROD en .env, agregarlo también
