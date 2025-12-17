@@ -56,6 +56,15 @@ export class User {
 
   @Column({nullable: true})
   photo?: string;
+
+    @Column({ nullable: true })
+  passwordResetToken?: string;
+
+  @Column({ nullable: true })
+  passwordResetExpires?: Date;
+
+
+
 }
 
 

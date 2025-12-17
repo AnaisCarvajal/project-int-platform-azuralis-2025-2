@@ -187,7 +187,7 @@ export function DashboardClinicalStaff({ navigation }: Props) {
   
     try {
       setUploadingPhoto(true);
-
+        
       const uploaded = await apiService.users.uploadProfilePicture(
         user.id,
         asset.uri

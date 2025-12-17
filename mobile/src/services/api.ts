@@ -112,7 +112,7 @@ export const apiService = {
         formData.append("file", {
           uri: file,
           name: "profile-picture.webp",
-          type: "image/webp",
+          type: "image/jpeg",
         } as any);
       } else {
         formData.append("file", file);
@@ -120,8 +120,7 @@ export const apiService = {
 
       const response = await api.post(
         `/users/${userId}/profile-picture`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        formData
       );
       return response.data as { url?: string };
     },
