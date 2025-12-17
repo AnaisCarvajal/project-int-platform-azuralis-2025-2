@@ -58,7 +58,7 @@ export const apiService = {
   },
 
   getProfile: async (userId: string) => {
-    const { data } = await api.get(`/auth/profile/${userId}`)
+    const { data } = await api.get(`/users/${userId}`)
     return data
   },
 

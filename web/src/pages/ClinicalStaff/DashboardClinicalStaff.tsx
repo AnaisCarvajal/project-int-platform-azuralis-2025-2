@@ -36,7 +36,24 @@ export function DashboardClinicalStaff() {
   const isDoctor = user?.role === "doctor";
   const isNurse = user?.role === "nurse";
   const accentColor = isDoctor ? "#001663" : "#00B4D8";
-  const roleLabel = isDoctor ? "Médico/a" : "Enfermera";
+  const roleLabel = isDoctor ? "Médico/a" : "Enfermería";
+
+  // Check if profile needs completion
+  useEffect(() => {
+    if (!user) return;
+
+    if (isDoctor) {
+      const doctorUser = user as DoctorUser;
+      // Doctor needs to complete profile if specialization or medicalLicense is missing
+      const needsCompletion = !doctorUser.specialization || !doctorUser.medicalLicense;
+      setNeedsProfileCompletion(needsCompletion);
+    } else if (isNurse) {
+      const nurseUser = user as NurseUser;
+      // Nurse needs to complete profile if department or license is missing
+      const needsCompletion = !nurseUser.department || !nurseUser.license;
+      setNeedsProfileCompletion(needsCompletion);
+    }
+  }, [user, isDoctor, isNurse]);
 
   // Load user profile picture
   useEffect(() => {

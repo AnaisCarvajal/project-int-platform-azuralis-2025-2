@@ -262,12 +262,15 @@ export const DOCTOR_PERMISSIONS: AppPermissions = {
 export const NURSE_PERMISSIONS: AppPermissions = {
   patientProfile: {
     editableFields: new Set<keyof Patient>([
-      'currentMedications',  // Solo puede editar medicamentos y resumen de tratamiento
-      'treatmentSummary'
+      'currentMedications',  // Puede editar medicamentos
+      'treatmentSummary',    // Puede editar resumen de tratamiento
+      'allergies',           // Puede editar alergias
+      'operations',          // Puede editar intervenciones quirúrgicas
+      'emergencyContacts',   // Puede editar contactos de emergencia
     ]),
   },
-  notes: { create: true, read: true, update: true, delete: false, scope: 'all' },
-  documents: { create: true, read: true, update: true, delete: false, scope: 'all' },
+  notes: { create: true, read: true, update: true, delete: true, scope: 'all' },
+  documents: { create: true, read: true, update: true, delete: true, scope: 'all' },
 };
 
 export const GUARDIAN_PERMISSIONS: AppPermissions = {
