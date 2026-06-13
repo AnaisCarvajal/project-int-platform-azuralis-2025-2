@@ -2,8 +2,8 @@
 -- Migration para agregar campos de verificación de email
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(255) NULLABLE;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_expires TIMESTAMP NULLABLE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_expires TIMESTAMP;
 
 -- Crear índice para búsquedas rápidas de tokens de verificación
 CREATE INDEX IF NOT EXISTS idx_email_verification_token ON users(email_verification_token);
