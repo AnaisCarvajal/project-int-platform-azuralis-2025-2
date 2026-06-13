@@ -14,6 +14,15 @@ export class User {
   @Column({ unique: true })
   email: string;
 
+  @Column({ type: 'boolean', default: false })
+  emailVerified: boolean;
+
+  @Column({ nullable: true })
+  emailVerificationToken?: string;
+
+  @Column({ nullable: true })
+  emailVerificationExpires?: Date;
+
   @Column()
   password: string;
 

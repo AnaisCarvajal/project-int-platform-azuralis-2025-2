@@ -46,16 +46,42 @@ export class AuthService {
 
     try {
       const hashed = await bcrypt.hash(password, 10);
-      const user = this.usersRepo.create({ name, email, rut, password: hashed, role });
+      
+      // Generar código de verificación de 6 dígitos
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const hashedCode = crypto
+        .createHash('sha256')
+        .update(verificationCode)
+        .digest('hex');
+
+      const user = this.usersRepo.create({
+        name,
+        email,
+        rut,
+        password: hashed,
+        role,
+        emailVerified: false,
+        emailVerificationToken: hashedCode,
+        emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 horas
+      });
       
       await this.usersRepo.save(user);
       this.logger.log(`User successfully registered: ${email} (ID: ${user.id})`);
 
+      // Enviar email de verificación
+      try {
+        await this.mailService.sendVerificationEmail(email, verificationCode);
+        this.logger.log(`Verification email sent to: ${email}`);
+      } catch (error) {
+        this.logger.error(`Failed to send verification email to ${email}: ${error.message}`);
+      }
+
       return {
-        message: 'Usuario registrado con éxito',
+        message: 'Usuario registrado con éxito. Verifica tu email para continuar.',
         email: user.email,
         role: user.role,
         id: user.id,
+        emailVerified: false,
       };
     } catch (error) {
       // Manejo de errores de base de datos como fallback
@@ -71,6 +97,36 @@ export class AuthService {
       }
       throw error;
     }
+  }
+
+  async verifyEmail(token: string) {
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    const user = await this.usersRepo.findOne({
+      where: {
+        emailVerificationToken: hashedToken,
+        emailVerificationExpires: MoreThan(new Date()),
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Código de verificación inválido o expirado');
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+
+    await this.usersRepo.save(user);
+    this.logger.log(`Email verified for user: ${user.email}`);
+
+    return {
+      message: 'Email verificado exitosamente',
+      email: user.email,
+    };
   }
 
   async login(email: string, password: string) {
@@ -93,7 +149,7 @@ export class AuthService {
     
     this.logger.log(`User successfully logged in: ${email} (ID: ${user.id})`);
     
-    return { access_token: token, role: user.role };
+    return { access_token: token, role: user.role, emailVerified: user.emailVerified };
   }
 
   async getProfile(id: string) {
@@ -193,6 +249,4 @@ export class AuthService {
 
     await this.usersRepo.save(user);
   }
-
-
 }

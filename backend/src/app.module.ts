@@ -3,7 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { PatientsModule } from './patients/patients.module';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 
 @Module({
@@ -12,8 +13,14 @@ import { ThrottlerModule } from '@nestjs/throttler';
 
     ThrottlerModule.forRoot([
       {
-        limit: 3,
+        name: 'default',
         ttl: 60,
+        limit: 3,
+      },
+      {
+        name: 'uploads',
+        ttl: 3600, // 1 hora
+        limit: 20, // 20 uploads por hora
       },
     ]),
 
@@ -67,6 +74,12 @@ import { ThrottlerModule } from '@nestjs/throttler';
 
     AuthModule,
     PatientsModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

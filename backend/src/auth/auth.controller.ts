@@ -15,6 +15,11 @@ export class AuthController {
     return this.authService.register(dto.name, dto.email, dto.password, dto.rut, dto.role);
   }
 
+  @Post('verify-email')
+  async verifyEmail(@Body('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
   @Post('login')
   @UsePipes(new ValidationPipe({ whitelist: true }))
   async login(@Body() dto: LoginDto) {

@@ -104,6 +104,38 @@ export class R2StorageService {
   }
 
   /**
+   * Genera una URL firmada para uploads (PUT) a R2
+   * @param key - Clave del objeto en R2
+   * @param contentType - Tipo de contenido del archivo
+   * @param expiresInMinutes - Tiempo de expiración en minutos (por defecto 5 minutos)
+   * @returns URL firmada para upload
+   */
+  async generatePresignedUploadUrl(
+    key: string,
+    contentType: string,
+    expiresInMinutes: number = 5,
+  ): Promise<string> {
+    try {
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        ContentType: contentType,
+      });
+
+      // Generar URL firmada para PUT con tiempo de expiración
+      const presignedUrl = await getSignedUrl(this.s3Client, command, {
+        expiresIn: expiresInMinutes * 60, // Convertir minutos a segundos
+      });
+
+      this.logger.log(`✅ Presigned upload URL generada para: ${key} (expira en ${expiresInMinutes} minutos)`);
+      return presignedUrl;
+    } catch (error) {
+      this.logger.error(`❌ Error generando presigned upload URL: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
    * Elimina un archivo de Cloudflare R2
    * @param containerName - Nombre del contenedor (prefijo)
    * @param blobName - Nombre del archivo
