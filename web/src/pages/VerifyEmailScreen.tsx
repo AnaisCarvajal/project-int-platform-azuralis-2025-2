@@ -224,10 +224,10 @@ export function VerifyEmailScreen() {
             <Button
               type="button"
               variant="link"
-              onClick={() => navigate("/register")}
+              onClick={() => navigate("/")}
               className="text-sm text-blue-600 hover:text-blue-800"
             >
-              Volver al Registro
+              Volver al Inicio
             </Button>
           </div>
         </CardContent>
