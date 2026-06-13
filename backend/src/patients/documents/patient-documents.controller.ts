@@ -61,7 +61,7 @@ export class PatientDocumentsController {
 
   @Post('presign')
   @UseGuards(JwtAuthGuard)
-  @Throttle('uploads', { limit: 20, ttl: 3600 })
+  @Throttle({ uploads: { limit: 20, ttl: 3600 } })
   async generatePresignedUrl(
     @Request() req: any,
     @Body() body: { filename: string; fileSize: number; contentType: string },
