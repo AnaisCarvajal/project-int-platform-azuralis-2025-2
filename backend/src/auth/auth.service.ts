@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../auth/entities/user.entity';
@@ -200,12 +200,10 @@ export class AuthService {
         this.logger.error(`Failed to resend verification code: ${error.message}`);
       }
       
-      // Lanzar excepción con status 403 para redirigir a verificación
-      const error: any = new UnauthorizedException(
+      // Usar ForbiddenException para status 403
+      const error = new ForbiddenException(
         'Por favor verifica tu email primero. Se envió un nuevo código a tu bandeja de entrada.'
       );
-      error.email = email;
-      error.statusCode = 403;
       throw error;
     }
 
