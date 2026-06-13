@@ -39,42 +39,40 @@ Este documento describe cómo configurar Cloudflare R2 para proteger contra uplo
 
 **Archivo**: `r2-lifecycle-rules.json`
 
-**Cómo aplicar en Cloudflare:**
-1. Ve a R2 → Bucket → `famed-azuralis` → Settings → **Object Lifecycle Rules**
-2. Haz clic en "Add rule"
-3. Configura cada regla según el JSON
+**Cómo aplicar en Cloudflare (Dashboard - Agregar manualmente):**
 
-**Reglas a crear:**
+Ve a **R2 → Bucket → famed-azuralis → Settings → Object Lifecycle Rules**
 
-#### Regla 1: Eliminar uploads incompletos
-- **Prefix**: `patient-documents/`
-- **Abort Incomplete Multipart Upload**: 1 día
-- **Estado**: Habilitado
+**Regla 1: Eliminar uploads incompletos después de 1 día**
+1. Haz clic en **"Add rule"**
+2. Rellena los campos:
+   - **Rule ID**: `DeleteMultipartUploads`
+   - **Status**: Habilitado ✓
+   - **Prefix**: `patient-documents/`
+   - **Abort incomplete multipart uploads**: Sí (1 día)
+3. Guarda
 
-#### Regla 2: Eliminar versiones antiguas  
-- **Prefix**: `patient-documents/`
-- **Delete Noncurrent Objects**: 30 días
-- **Estado**: Habilitado
+**Regla 2: Eliminar documentos después de 1 año**
+1. Haz clic en **"Add rule"**
+2. Rellena los campos:
+   - **Rule ID**: `DeleteOldDocuments`
+   - **Status**: Habilitado ✓
+   - **Prefix**: `patient-documents/`
+   - **Expiration**: 365 días
+3. Guarda
 
-#### Regla 3: Archivar documentos viejos
-- **Prefix**: `patient-documents/`
-- **Transition to Archive**: 90 días
-- **Estado**: Habilitado
+**Notas:**
+- Cloudflare NO soporta archivado a STANDARD_IA en el dashboard
+- La UI es más simple que AWS S3
+- Usa el dashboard (no JSON) para agregar reglas
+- Los cambios pueden tardar hasta 24 horas
 
-#### Regla 4: Eliminar documentos muy viejos
-- **Prefix**: `patient-documents/`
-- **Expiration**: 365 días (1 año)
-- **Estado**: Habilitado
-
-### 3. Bucket Lock Rules (Protección de datos)
+### 3. Bucket Lock Rules (Protección de datos) - OPCIONAL
 
 **Cómo aplicar en Cloudflare:**
 1. Ve a R2 → Bucket → `famed-azuralis` → Settings → **Bucket Lock Rules**
 2. Haz clic en "Edit Bucket Lock"
-3. Recomendaciones:
-   - **Retention Period**: 90 días (documentos médicos deben guardarse)
-   - **Governance Mode**: Habilitado (permite excepciones)
-   - **Estado**: Habilitado
+3. (Cloudflare R2 actualmente NO soporta Object Lock completo como AWS S3)
 
 ---
 
@@ -162,9 +160,9 @@ POST /patient-documents/confirm
 | CORS Origins | `https://tu-dominio.com` | Solo tu frontend sube |
 | CORS Methods | GET, PUT, HEAD | Solo operaciones necesarias |
 | Multipart Cleanup | 1 día | No acumular uploads rotos |
-| Archive Age | 90 días | Reducir costos, mantener acceso |
-| Max Retention | 365 días | Cumplimiento normativo |
+| Document Deletion | 365 días | Cumplimiento normativo |
 | Prefix Filter | `patient-documents/` | Solo aplicar a documentos |
+| CORS Caching | 3600 segundos | Reducir preflight requests |
 
 ---
 
