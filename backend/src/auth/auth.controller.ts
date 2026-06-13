@@ -20,6 +20,11 @@ export class AuthController {
     return this.authService.verifyEmail(token);
   }
 
+  @Post('resend-verification-email')
+  async resendVerificationEmail(@Body('email') email: string) {
+    return this.authService.resendVerificationEmail(email);
+  }
+
   @Post('login')
   @UsePipes(new ValidationPipe({ whitelist: true }))
   async login(@Body() dto: LoginDto) {

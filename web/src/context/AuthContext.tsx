@@ -9,6 +9,7 @@ interface AuthContextType {
     login: (email:string, password: string) => Promise<User>;
     logout: () => void;
     register: (userData: any) => Promise<any>;
+    verifyEmail: (email: string, password: string) => Promise<User>;
     refreshUser: () => Promise<void>;
 }
 
@@ -100,11 +101,22 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
 
             const registrationResponse = await apiService.register(registrationData)
 
-            // Hace login automático después del registro
-            await login(userData.email, userData.password)
+            // NO hacemos login automático - el usuario debe verificar email primero
+            // Las credenciales se guardan en RegisterScreen.tsx para verificación posterior
 
             // Retorna la respuesta del registro para procesos adicionales
             return registrationResponse
+        } catch (error: any) {
+            throw error
+        }
+    }
+
+    const verifyEmail = async (email: string, password: string) => {
+        // Verificar email (backend ya verificó el código)
+        // Luego hace login automático
+        try {
+            const userData = await login(email, password)
+            return userData
         } catch (error: any) {
             throw error
         }
@@ -132,6 +144,7 @@ const AuthProvider = ({children}: {children:React.ReactNode}) => {
                 user,
                 login,
                 register,
+                verifyEmail,
                 logout,
                 refreshUser,
                 isAuthenticated: !!user,

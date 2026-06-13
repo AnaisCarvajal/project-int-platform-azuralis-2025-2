@@ -77,6 +77,16 @@ export const apiService = {
     return data
   },
 
+  verifyEmail: async (token: string): Promise<{ message: string; email: string }> => {
+    const { data } = await api.post("/auth/verify-email", { token })
+    return data
+  },
+
+  resendVerificationEmail: async (email: string): Promise<{ message: string }> => {
+    const { data } = await api.post("/auth/resend-verification-email", { email })
+    return data
+  },
+
   // ==================== USERS ====================
   users: {
     update: async (userId: string, userData: Partial<any>): Promise<any> => {

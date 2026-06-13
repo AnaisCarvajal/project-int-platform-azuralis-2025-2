@@ -129,6 +129,50 @@ export class AuthService {
     };
   }
 
+  async resendVerificationEmail(email: string) {
+    const user = await this.usersRepo.findOne({ where: { email } });
+
+    if (!user) {
+      // No revelar si el usuario existe o no por seguridad
+      this.logger.warn(`Resend verification email requested for non-existent user: ${email}`);
+      return {
+        message: 'Si el correo existe en el sistema, se enviará un nuevo código de verificación.',
+      };
+    }
+
+    if (user.emailVerified) {
+      this.logger.warn(`Resend verification email requested for already verified user: ${email}`);
+      return {
+        message: 'Este email ya ha sido verificado. Puedes iniciar sesión.',
+      };
+    }
+
+    // Generar nuevo código de verificación de 6 dígitos
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedCode = crypto
+      .createHash('sha256')
+      .update(verificationCode)
+      .digest('hex');
+
+    user.emailVerificationToken = hashedCode;
+    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
+
+    await this.usersRepo.save(user);
+    this.logger.log(`New verification email sent to: ${email}`);
+
+    // Enviar nuevo código por email
+    try {
+      await this.mailService.sendVerificationEmail(email, verificationCode);
+    } catch (error) {
+      this.logger.error(`Failed to send verification email to ${email}: ${error.message}`);
+      // Aún así retornar mensaje de éxito por seguridad
+    }
+
+    return {
+      message: 'Si el correo existe en el sistema, se enviará un nuevo código de verificación.',
+    };
+  }
+
   async login(email: string, password: string) {
     this.logger.log(`Login attempt for email: ${email}`);
     

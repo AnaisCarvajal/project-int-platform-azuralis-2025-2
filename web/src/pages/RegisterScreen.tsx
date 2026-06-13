@@ -93,24 +93,30 @@ export function RegisterScreen() {
     setIsLoading(true);
     
     try {
-      // Call API for registration
+      const email = formData.email.trim().toLowerCase();
+      const password = formData.password;
+      
+      // Call API for registration (only register, don't login yet)
       await registerUser({
         name: formData.name.trim(),
-        email: formData.email.trim().toLowerCase(),
+        email: email,
         rut: formData.rut,
-        password: formData.password,
+        password: password,
         role: formData.role
       });
       
-      // Show success message
-      setSuccessMessage('¡Cuenta creada exitosamente! Redirigiendo al dashboard...');
+      // Guardar credenciales para login automático después de verificar email
+      localStorage.setItem("registerCredentials", JSON.stringify({ email, password }));
       
-      // Wait 2 seconds then navigate to appropriate dashboard
+      // Show success message
+      setSuccessMessage('¡Cuenta creada exitosamente! Verifica tu email para continuar...');
+      
+      // Wait 1.5 seconds then navigate to email verification
       setTimeout(() => {
-        // AuthContext already logs in automatically after registration
-        // The user object is already set, so we can navigate
-        navigate('/'); // Will be redirected to dashboard by ProtectedRoute
-      }, 2000);
+        navigate('/verify-email', { 
+          state: { email } 
+        });
+      }, 1500);
       
     } catch (err: any) {
       // Handle specific errors from backend

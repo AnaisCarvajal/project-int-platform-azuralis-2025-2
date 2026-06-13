@@ -5,6 +5,7 @@ import { DashboardGuardian } from "../pages/Guardian/DashboardGuardian";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { HomePage } from "../pages/HomePage";
 import { RegisterScreen } from "../pages/RegisterScreen";
+import { VerifyEmailScreen } from "../pages/VerifyEmailScreen";
 import { EmergencyAccess } from "../pages/EmergencyAccess";
 import { ForgotPasswordScreen } from "../pages/ForgotPasswordScreen";
 import { ResetPasswordScreen } from "../pages/ResetPasswordScreen";
@@ -18,6 +19,9 @@ export function AppRouter() {
 
                 {/* Ruta pública - Registro */}
                 <Route path="/register" element={<RegisterScreen />} />
+
+                {/* Ruta pública - Verificación de email */}
+                <Route path="/verify-email" element={<VerifyEmailScreen />} />
 
                 {/* Ruta pública - Recuperación de contraseña */}
                 <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
