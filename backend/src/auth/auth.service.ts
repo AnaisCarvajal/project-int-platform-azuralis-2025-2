@@ -188,6 +188,27 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
+    // ✅ VERIFICAR QUE EL EMAIL ESTÉ VERIFICADO
+    if (!user.emailVerified) {
+      this.logger.warn(`Login blocked: Email not verified for user: ${email}`);
+      
+      // Auto-reenviar código de verificación
+      try {
+        await this.resendVerificationEmail(email);
+        this.logger.log(`Auto-resent verification code to unverified user: ${email}`);
+      } catch (error) {
+        this.logger.error(`Failed to resend verification code: ${error.message}`);
+      }
+      
+      // Lanzar excepción con el email para que el frontend lo maneje
+      const error: any = new UnauthorizedException(
+        'Por favor verifica tu email primero. Se envió un nuevo código a tu bandeja de entrada.'
+      );
+      error.email = email;
+      error.statusCode = 403; // Forbidden - email not verified
+      throw error;
+    }
+
     const payload = { sub: user.id, email: user.email, role: user.role };
     const token = this.jwtService.sign(payload);
     

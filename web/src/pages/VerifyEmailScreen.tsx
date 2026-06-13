@@ -23,14 +23,23 @@ export function VerifyEmailScreen() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  // Get email from navigation state
+  // Get email from navigation state or localStorage
   useEffect(() => {
     const state = location.state as { email?: string } | null;
-    if (state?.email) {
-      setEmail(state.email);
+    const emailFromState = state?.email;
+    const emailFromStorage = localStorage.getItem("unverifiedEmail");
+    
+    const email = emailFromState || emailFromStorage;
+    
+    if (email) {
+      setEmail(email);
+      // Limpiar localStorage después de usarlo
+      if (emailFromStorage) {
+        localStorage.removeItem("unverifiedEmail");
+      }
     } else {
-      // Si no viene el email, redirigir a registro
-      navigate("/register");
+      // Si no viene el email, redirigir a login
+      navigate("/");
     }
   }, [location, navigate]);
 

@@ -75,7 +75,21 @@ export function LoginScreen() {
         } else if (status === 404) {
           setError("Usuario no encontrado. ¿Necesitas registrarte?");
         } else if (status === 403) {
-          setError("Tu cuenta está bloqueada. Contacta al administrador.");
+          // Email no verificado
+          if (message?.includes("verifica tu email")) {
+            // Guardar email para la pantalla de verificación
+            localStorage.setItem("unverifiedEmail", email.trim());
+            setError(message);
+            // Redirigir a verificación después de 2 segundos
+            setTimeout(() => {
+              navigate("/verify-email", { 
+                state: { email: email.trim() } 
+              });
+            }, 2000);
+            return;
+          } else {
+            setError("Tu cuenta está bloqueada. Contacta al administrador.");
+          }
         } else if (status === 500) {
           setError("Error en el servidor. Por favor intenta más tarde.");
         } else {
