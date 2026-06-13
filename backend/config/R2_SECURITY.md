@@ -12,28 +12,27 @@ Este documento describe cómo configurar Cloudflare R2 para proteger contra uplo
 
 **Cómo aplicar en Cloudflare:**
 1. Ve a R2 → Bucket → `famed-azuralis` → Settings → **CORS Policy**
-2. Haz clic en "Edit CORS Policy"
+2. Haz clic en "Add CORS policy"
 3. Copia y pega el contenido de `r2-cors.json`
 4. Reemplaza `https://tu-dominio-frontend.com` con tu URL real (ej: https://lacito.com)
 5. Guarda los cambios
 
-**Configuración:**
+**Configuración (formato Cloudflare R2):**
 - ✅ Solo permite GET, PUT, HEAD
 - ✅ Restringido a tu dominio (no wildcard)
 - ✅ Solo headers necesarios permitidos
 - ✅ Respuestas cacheadas por 1 hora (3600s)
 
 ```json
-{
-  "CORSRules": [
-    {
-      "AllowedOrigins": ["https://tu-dominio-frontend.com"],
-      "AllowedMethods": ["GET", "PUT", "HEAD"],
-      "AllowedHeaders": ["Content-Type", "Authorization"],
-      "MaxAgeSeconds": 3600
-    }
-  ]
-}
+[
+  {
+    "AllowedOrigins": ["https://tu-dominio-frontend.com"],
+    "AllowedMethods": ["GET", "PUT", "HEAD"],
+    "AllowedHeaders": ["Content-Type", "Authorization"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
 ```
 
 ### 2. Object Lifecycle Rules (Limpiar archivos viejos)

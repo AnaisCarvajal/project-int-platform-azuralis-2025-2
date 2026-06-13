@@ -1,25 +1,21 @@
-{
-  "CORSRules": [
-    {
-      "AllowedOrigins": [
-        "https://tu-dominio-frontend.com",
-        "https://www.tu-dominio-frontend.com"
-      ],
-      "AllowedMethods": [
-        "GET",
-        "PUT",
-        "HEAD"
-      ],
-      "AllowedHeaders": [
-        "Content-Type",
-        "Authorization",
-        "X-Amz-*"
-      ],
-      "MaxAgeSeconds": 3600,
-      "ExposeHeaders": [
-        "ETag",
-        "X-Amz-Version-Id"
-      ]
-    }
-  ]
-}
+[
+  {
+    "AllowedOrigins": [
+      "https://tu-dominio-frontend.com",
+      "https://www.tu-dominio-frontend.com"
+    ],
+    "AllowedMethods": [
+      "GET",
+      "PUT",
+      "HEAD"
+    ],
+    "AllowedHeaders": [
+      "Content-Type",
+      "Authorization"
+    ],
+    "ExposeHeaders": [
+      "ETag"
+    ],
+    "MaxAgeSeconds": 3600
+  }
+]
