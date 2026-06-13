@@ -1,0 +1,60 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowPresignedUploadOnly",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::famed-azuralis/*",
+      "Condition": {
+        "StringLike": {
+          "aws:SourceIp": [
+            "*"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "DenyDirectUploadsWithoutPresignature",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::famed-azuralis/*",
+      "Condition": {
+        "StringNotLike": {
+          "aws:username": "AWS_ACCOUNT_PRINCIPAL"
+        }
+      }
+    },
+    {
+      "Sid": "AllowBackendServiceOnly",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::ACCOUNT_ID:user/r2-user"
+      },
+      "Action": [
+        "s3:*"
+      ],
+      "Resource": [
+        "arn:aws:s3:::famed-azuralis",
+        "arn:aws:s3:::famed-azuralis/*"
+      ]
+    },
+    {
+      "Sid": "DenyLargeFileUploads",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::famed-azuralis/*",
+      "Condition": {
+        "NumericGreaterThan": {
+          "s3:content-length": "52428800"
+        }
+      }
+    }
+  ]
+}

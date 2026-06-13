@@ -1,0 +1,47 @@
+{
+  "Rules": [
+    {
+      "Id": "DeleteMultipartUploads",
+      "Status": "Enabled",
+      "AbortIncompleteMultipartUpload": {
+        "DaysAfterInitiation": 1
+      },
+      "Filter": {
+        "Prefix": "patient-documents/"
+      }
+    },
+    {
+      "Id": "DeleteOldVersions",
+      "Status": "Enabled",
+      "NoncurrentVersionExpiration": {
+        "NoncurrentDays": 30
+      },
+      "Filter": {
+        "Prefix": "patient-documents/"
+      }
+    },
+    {
+      "Id": "ArchiveOldDocuments",
+      "Status": "Enabled",
+      "Transitions": [
+        {
+          "Days": 90,
+          "StorageClass": "ARCHIVE"
+        }
+      ],
+      "Filter": {
+        "Prefix": "patient-documents/"
+      }
+    },
+    {
+      "Id": "DeleteVeryOldDocuments",
+      "Status": "Enabled",
+      "Expiration": {
+        "Days": 365
+      },
+      "Filter": {
+        "Prefix": "patient-documents/"
+      }
+    }
+  ]
+}
