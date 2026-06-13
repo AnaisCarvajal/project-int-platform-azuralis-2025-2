@@ -23,18 +23,17 @@ export function EditSurgicalHistoryModal({
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [newIntervention, setNewIntervention] = useState<Operation>({
-    type: "",
+    procedure: "",
     date: "",
     hospital: "",
-    notes: "",
   });
 
   if (!isOpen) return null;
 
   const handleAddIntervention = () => {
-    if (newIntervention.type.trim() && newIntervention.date) {
+    if (newIntervention.procedure.trim() && newIntervention.date) {
       setHistory([...history, { ...newIntervention }]);
-      setNewIntervention({ type: "", date: "", hospital: "", notes: "" });
+      setNewIntervention({ procedure: "", date: "", hospital: "" });
       setShowForm(false);
     }
   };
@@ -93,9 +92,9 @@ export function EditSurgicalHistoryModal({
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-3">
               <input
                 type="text"
-                value={newIntervention.type}
+                value={newIntervention.procedure}
                 onChange={(e) =>
-                  setNewIntervention({ ...newIntervention, type: e.target.value })
+                  setNewIntervention({ ...newIntervention, procedure: e.target.value })
                 }
                 placeholder="Tipo de procedimiento *"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
@@ -118,9 +117,9 @@ export function EditSurgicalHistoryModal({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
               />
               <textarea
-                value={newIntervention.notes || ""}
+                value={newIntervention.hospital || ""}
                 onChange={(e) =>
-                  setNewIntervention({ ...newIntervention, notes: e.target.value })
+                  setNewIntervention({ ...newIntervention, hospital: e.target.value })
                 }
                 placeholder="Notas (opcional)"
                 rows={2}
@@ -135,7 +134,7 @@ export function EditSurgicalHistoryModal({
                 </button>
                 <button
                   onClick={handleAddIntervention}
-                  disabled={!newIntervention.type.trim() || !newIntervention.date}
+                  disabled={!newIntervention.procedure.trim() || !newIntervention.date}
                   className="flex-1 px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50"
                 >
                   Agregar
@@ -167,17 +166,12 @@ export function EditSurgicalHistoryModal({
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900">
-                        {intervention.type}
+                        {intervention.procedure}
                       </h4>
                       <p className="text-sm text-gray-500">
                         {new Date(intervention.date).toLocaleDateString("es-CL")}
                         {intervention.hospital && ` • ${intervention.hospital}`}
                       </p>
-                      {intervention.notes && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          {intervention.notes}
-                        </p>
-                      )}
                     </div>
                     <button
                       onClick={() => handleRemoveIntervention(index)}

@@ -44,8 +44,8 @@ export function DashboardClinicalStaff() {
 
     if (isDoctor) {
       const doctorUser = user as DoctorUser;
-      // Doctor needs to complete profile if specialization or medicalLicense is missing
-      const needsCompletion = !doctorUser.specialization || !doctorUser.medicalLicense;
+      // Doctor needs to complete profile if specialization or license is missing
+      const needsCompletion = !doctorUser.specialization || !doctorUser.license;
       setNeedsProfileCompletion(needsCompletion);
     } else if (isNurse) {
       const nurseUser = user as NurseUser;
