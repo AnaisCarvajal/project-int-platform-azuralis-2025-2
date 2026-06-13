@@ -130,18 +130,31 @@ export function VerifyEmailScreen() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <CancerRibbon />
-      
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-2 text-center pb-4">
-          <div className="flex justify-center mb-4">
-            <LogoUniversidad className="h-12 w-12" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* HEADER */}
+        <div className="text-center space-y-4">
+          {/* LOGOS */}
+          <div className="flex items-center justify-center space-x-3">
+            <CancerRibbon className="text-[#ff6299]" size="lg" />
+            <LogoUniversidad className="w-8 h-8" />
           </div>
-          <CardTitle className="text-2xl font-bold">Verifica tu Email</CardTitle>
-          <CardDescription className="text-sm">
-            Te enviamos un código de 6 dígitos a <strong>{email}</strong>
-          </CardDescription>
+          {/* SUBTITULO */}
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold text-gray-900 text-center">
+              Verifica tu Email
+            </h1>
+            <p className="text-sm text-gray-600 text-center">
+              Te enviamos un código de 6 dígitos a <strong>{email}</strong>
+            </p>
+          </div>
+        </div>
+
+        {/* VERIFICATION FORM */}
+        <Card className="shadow-lg">
+        <CardHeader className="flex items-center justify-center">
+          <CardTitle>Código de Verificación</CardTitle>
+          <CardDescription>Ingresa el código que recibiste por email</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -219,6 +232,17 @@ export function VerifyEmailScreen() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Footer */}
+      <div className="text-center text-sm text-gray-500">
+        <p>
+          Sistema desarrollado para mejorar la atención oncológica.
+        </p>
+        <p className="mt-1">
+          © 2025 Azuralis
+        </p>
+      </div>
+      </div>
     </div>
   );
 }
