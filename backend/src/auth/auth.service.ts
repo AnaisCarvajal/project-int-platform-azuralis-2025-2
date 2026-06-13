@@ -188,7 +188,7 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // ✅ VERIFICAR QUE EL EMAIL ESTÉ VERIFICADO
+    // ✅ BLOQUEAR LOGIN SI EMAIL NO ESTÁ VERIFICADO
     if (!user.emailVerified) {
       this.logger.warn(`Login blocked: Email not verified for user: ${email}`);
       
@@ -200,12 +200,12 @@ export class AuthService {
         this.logger.error(`Failed to resend verification code: ${error.message}`);
       }
       
-      // Lanzar excepción con el email para que el frontend lo maneje
+      // Lanzar excepción con status 403 para redirigir a verificación
       const error: any = new UnauthorizedException(
         'Por favor verifica tu email primero. Se envió un nuevo código a tu bandeja de entrada.'
       );
       error.email = email;
-      error.statusCode = 403; // Forbidden - email not verified
+      error.statusCode = 403;
       throw error;
     }
 

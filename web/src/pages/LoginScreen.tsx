@@ -75,12 +75,10 @@ export function LoginScreen() {
         } else if (status === 404) {
           setError("Usuario no encontrado. ¿Necesitas registrarte?");
         } else if (status === 403) {
-          // Email no verificado
+          // Email no verificado - redirigir a verificación
           if (message?.includes("verifica tu email")) {
-            // Guardar email para la pantalla de verificación
             localStorage.setItem("unverifiedEmail", email.trim());
             setError(message);
-            // Redirigir a verificación después de 2 segundos
             setTimeout(() => {
               navigate("/verify-email", { 
                 state: { email: email.trim() } 
